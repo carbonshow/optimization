@@ -1,4 +1,4 @@
-package dev.carbonshow.algorithm;
+package dev.carbonshow.algorithm.partition;
 
 import java.util.ArrayList;
 import java.util.HashMap;

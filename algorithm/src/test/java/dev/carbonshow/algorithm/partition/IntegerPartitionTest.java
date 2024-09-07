@@ -1,4 +1,4 @@
-package dev.carbonshow.algorithm;
+package dev.carbonshow.algorithm.partition;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

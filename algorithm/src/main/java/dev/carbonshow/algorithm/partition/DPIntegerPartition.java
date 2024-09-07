@@ -1,4 +1,4 @@
-package dev.carbonshow.algorithm;
+package dev.carbonshow.algorithm.partition;
 
 import java.util.ArrayList;
 
@@ -108,7 +108,7 @@ public class DPIntegerPartition implements IntegerPartition {
    * @param addendSize       加数集合只考虑最小的指定数量的加数
    * @param partitionedValue 等待被拆分的正整数
    * @return 返回总的划分数量
-   * @see dev.carbonshow.algorithm.DPIntegerPartition
+   * @see DPIntegerPartition
    * <p>
    * 采取和动态规划求解器相同的思路，只不过将问题转化为递归方式解决。
    */

@@ -1,4 +1,4 @@
-rootProject.name = "java-demos"
+rootProject.name = "optimization"
 
 include("algorithm")
 include("matchmaking")

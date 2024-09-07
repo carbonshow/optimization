@@ -1,4 +1,4 @@
-package dev.carbonshow.algorithm;
+package dev.carbonshow.algorithm.partition;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -41,5 +41,5 @@ interface MaxPartitions {
    * @param partitioned   对上面的加数集合进行划分，每个划分所含加数之和应该等于该值。
    * @return 返回最终划分结果的详细数据，将所有划分方案的组成以及实施数量罗列出来
    */
-  ArrayList<PartitionData> solveWithPartitions(Map<Integer, Integer> finiteAddends, int partitioned);
+  ArrayList<PartitionData> solve(Map<Integer, Integer> finiteAddends, int partitioned);
 }
