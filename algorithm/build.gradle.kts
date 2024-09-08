@@ -1,5 +1,7 @@
 plugins {
     id("java")
+    id("me.champeau.jmh") version "0.7.2"
+
 }
 
 group = "dev.carbonshow.algorithm"
@@ -15,6 +17,9 @@ dependencies {
     implementation("org.apache.commons:commons-lang3:3.17.0")
     implementation("com.google.ortools:ortools-java:9.10.4067")
 
+    jmh("org.openjdk.jmh:jmh-core:1.37")
+    jmh("org.openjdk.jmh:jmh-generator-annprocess:1.37")
+    jmh("org.openjdk.jmh:jmh-generator-bytecode:1.37")
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }

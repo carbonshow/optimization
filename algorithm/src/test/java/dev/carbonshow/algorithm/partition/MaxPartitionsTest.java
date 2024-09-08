@@ -1,5 +1,6 @@
 package dev.carbonshow.algorithm.partition;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -8,7 +9,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DefaultMaxPartitionsTest {
+class MaxPartitionsTest {
     final private Map<Integer, Integer> ADDENDS = Map.of(1, 100, 2, 40, 5, 10);
     final private int PARTITIONED = 10;
     final private ArrayList<Map<Integer, Long>> PARTITION_PLANS = new ArrayList<>(Arrays.asList(Map.of(1, 6L, 2, 2L),
@@ -17,10 +18,35 @@ class DefaultMaxPartitionsTest {
             Map.of(1,5L,5,1L)
             ));
 
+    @Tag("TwoPhase")
     @Test
-    void solve() {
-        DefaultMaxPartitions programmingMaxPartition = new DefaultMaxPartitions();
-        var partitions = programmingMaxPartition.solve(ADDENDS, PARTITIONED);
+    void solveTwoPhase() {
+        DefaultMaxPartitions solver = new DefaultMaxPartitions();
+        var partitions = solver.solve(ADDENDS, PARTITIONED);
+        validate(partitions);
+    }
+
+    @Tag("TwoPhase")
+    @Test
+    void solveWithPartitionPlanTwoPhase() {
+        DefaultMaxPartitions solver = new DefaultMaxPartitions();
+        var partitions = solver.solveWithPartitionPlan(ADDENDS, PARTITIONED, PARTITION_PLANS);
+        assertNotNull(partitions);
+        for (var data : partitions) {
+            System.out.printf("%s\n", data);
+        }
+    }
+
+    @Tag("IntegerProgramming")
+    @Test
+    void solveIntegerProgramming() {
+        IntegerProgrammingMaxPartitions solver = new IntegerProgrammingMaxPartitions();
+        var partitions = solver.solve(ADDENDS, PARTITIONED);
+        validate(partitions);
+    }
+
+    // 划分结果的校验逻辑
+    private void validate(ArrayList<PartitionData> partitions){
         assertNotNull(partitions);
         for (var data : partitions) {
             System.out.printf("%s\n", data);
@@ -34,16 +60,6 @@ class DefaultMaxPartitionsTest {
         var addendUseCounts = PartitionData.addendsUsedCount(partitions);
         for (Map.Entry<Integer, Long> entry : addendUseCounts.entrySet()) {
             assertTrue(entry.getValue() <= ADDENDS.get(entry.getKey()));
-        }
-    }
-
-    @Test
-    void solveWithPartitionPlan() {
-        DefaultMaxPartitions programmingMaxPartition = new DefaultMaxPartitions();
-        var partitions = programmingMaxPartition.solveWithPartitionPlan(ADDENDS, PARTITIONED, PARTITION_PLANS);
-        assertNotNull(partitions);
-        for (var data : partitions) {
-            System.out.printf("%s\n", data);
         }
     }
 }

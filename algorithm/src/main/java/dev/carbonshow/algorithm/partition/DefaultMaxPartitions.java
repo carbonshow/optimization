@@ -43,13 +43,13 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * 获取最大划分的细节数据
    * @param addends 加数集合，这是一个二维数组，一维表示不同的加数，二维应该具有两个元素，分别为加数的值，以及当前加数的数量
    * @param partitioned   对上面的加数集合进行划分，每个划分所含加数之和应该等于该值。
-   * @return 返回最大划分的细节数据，包含每个划分的组成，以及该划分实例化之后的数据
+   * @return 返回最大划分的细节数据，包含每个划分的组成，以及该划分实例化之后的数据，不存在则返回 null
    */
   @Override
   public ArrayList<PartitionData> solve(Map<Integer, Integer> addends, int partitioned) {
     var orderedAddends = new int[addends.size()];
     var orderedAddendCounts = new int[addends.size()];
-    addendsToArray(addends, orderedAddends, orderedAddendCounts);
+    MaxPartitionsUtils.addendsToArray(addends, orderedAddends, orderedAddendCounts);
 
     var partitionPlans = solveIntegerPartition(orderedAddends, partitioned);
 
@@ -68,7 +68,7 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
   public ArrayList<PartitionData> solveWithPartitionPlan(Map<Integer, Integer> addends, int partitioned, ArrayList<Map<Integer, Long>> partitionPlans) {
     var orderedAddends = new int[addends.size()];
     var orderedAddendCounts = new int[addends.size()];
-    addendsToArray(addends, orderedAddends, orderedAddendCounts);
+    MaxPartitionsUtils.addendsToArray(addends, orderedAddends, orderedAddendCounts);
 
     return solveImpl(orderedAddends, orderedAddendCounts, partitionPlans);
   }
@@ -83,7 +83,7 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * @param orderedAddends 升序排列的加数数组
    * @param orderedAddendCounts 加数对应的数量，和 orderedAddends 中加数出现的顺序一一对应
    * @param partitionPlans 划分方案列表，每个划分方案以 Map 形式表示，key 是加数，value 是加数出现次数
-   * @return 返回划分详细数据列表，可能返回 null
+   * @return 返回划分详细数据列表，不存在则返回 null
    */
   private ArrayList<PartitionData> solveImpl(int[] orderedAddends, int[] orderedAddendCounts, ArrayList<Map<Integer, Long>> partitionPlans) {
 
@@ -133,7 +133,7 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
     int addendMaxCount = NumberUtils.max(addendCounts);
     ArrayList<MPVariable> partitionPlanCountVariables = new ArrayList<>(partitionPlans.size());
     for (int i = 0; i < partitionPlans.size(); i++) {
-      partitionPlanCountVariables.add(programmingSolver.makeIntVar(0.0, addendMaxCount, "p"+i));
+      partitionPlanCountVariables.add(programmingSolver.makeIntVar(0, addendMaxCount, "p"+i));
     }
 
     // 约束条件，每个加数在所有方案中出现的总次数不得超过其总数，所以约束条件数量和加数相同
@@ -142,7 +142,7 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
       int addendCountTotal = addendCounts[i];
 
       // 加数的约束条件，使用的总次数一定处于 [0, addendCountTotal] 之内
-      var constraint = programmingSolver.makeConstraint(0.0, addendCountTotal, "c"+i);
+      var constraint = programmingSolver.makeConstraint(0, addendCountTotal, "c"+i);
 
       // 决策变量即每个划分方案的实施次数。对于当前加数而言：
       // 加数使用总次数 = 方案1实施次数*方案1内加数使用次数 + 方案2实施次数*方案2内加数使用次数 + ...
@@ -167,23 +167,6 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
     } else {
       // 无解
       return null;
-    }
-  }
-
-  /**
-   * 将 Map 类型的加数按照加数升序方式排列，并将加数和加数的数量分别保存在两个数组中
-   * @param addends 加数集合
-   * @param orderedAddends 输出的升序排列的加数
-   * @param orderedAddendCounts 输出的加数数量，和 orderedAddends 一一对应
-   */
-  private void addendsToArray(Map<Integer, Integer> addends, int[] orderedAddends, int[] orderedAddendCounts) {
-    // 对加数进行升序排序
-    var sortedAddendMap = new TreeMap<>(addends);
-    int i = 0;
-    for (Integer addend : sortedAddendMap.keySet()) {
-      orderedAddends[i] = addend;
-      orderedAddendCounts[i] = sortedAddendMap.get(addend);
-      i++;
     }
   }
 }

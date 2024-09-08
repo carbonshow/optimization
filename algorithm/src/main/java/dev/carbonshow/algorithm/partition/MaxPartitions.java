@@ -37,9 +37,9 @@ interface MaxPartitions {
    *   <li>每个划分中，各加数之和</li>
    * </ul>
    *
-   * @param finiteAddends 加数集合，这是一个二维数组，一维表示不同的加数，二维应该具有两个元素，分别为加数的值，以及当前加数的数量
+   * @param addends 加数集合，这是一个二维数组，一维表示不同的加数，二维应该具有两个元素，分别为加数的值，以及当前加数的数量
    * @param partitioned   对上面的加数集合进行划分，每个划分所含加数之和应该等于该值。
-   * @return 返回最终划分结果的详细数据，将所有划分方案的组成以及实施数量罗列出来
+   * @return 返回最终划分结果的详细数据，将所有划分方案的组成以及实施数量罗列出来；不存在则返回 null
    */
-  ArrayList<PartitionData> solve(Map<Integer, Integer> finiteAddends, int partitioned);
+  ArrayList<PartitionData> solve(Map<Integer, Integer> addends, int partitioned);
 }
