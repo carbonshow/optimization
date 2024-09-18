@@ -54,17 +54,17 @@ public class IntegerProgrammingMaxPartitions implements MaxPartitions {
      * @return 返回最终划分结果的详细数据，将所有划分方案的组成以及实施数量罗列出来，不存在则返回 null
      */
     @Override
-    public ArrayList<PartitionData> solve(Map<Integer, Integer> addends, int partitioned) {
+    public ArrayList<PartitionData> solve(Map<Long, Long> addends, long partitioned) {
         // 清理求解器
         solver.clear();
 
         // 确定加数种类的最大数量和划分的最大数量，划分最大数量一定不超过所有加数数量之和
         final int maxAddendKinds = addends.size();
-        final int maxPartitions = addends.values().stream().mapToInt(i -> i).sum();
+        final int maxPartitions = addends.values().stream().mapToInt(Long::intValue).sum();
 
         // 将加数和对应总数拆分到两个不同的数组中，并按加数大小升序排列
-        var orderedAddends = new int[addends.size()];
-        var orderedAddendCounts = new int[addends.size()];
+        var orderedAddends = new long[addends.size()];
+        var orderedAddendCounts = new long[addends.size()];
         MaxPartitionsUtils.addendsToArray(addends, orderedAddends, orderedAddendCounts);
 
         // 定义加数决策变量， 即每个划分中该加数使用的数量，每个加数决策变量的上限必定不能超过当前加数的总数
@@ -113,7 +113,7 @@ public class IntegerProgrammingMaxPartitions implements MaxPartitions {
             for (int j = 0; j < maxPartitions; j++) {
                 if (partitionVariables[j].solutionValue() == 1) {
                     // 说明该划分实际存在，获取划分内容
-                    var partition = new HashMap<Integer, Long>();
+                    var partition = new HashMap<Long, Long>();
                     for (int i = 0; i < maxAddendKinds; i++) {
                         var addendCnt = (long) addendVariables[i][j].solutionValue();
                         if (addendCnt > 0) {

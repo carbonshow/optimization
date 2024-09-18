@@ -52,7 +52,7 @@ public class DPIntegerPartition implements IntegerPartition {
    * @return 返回总的划分数量
    */
   @Override
-  public int solve(int[] addendSet, int partitioned) {
+  public long solve(long[] addendSet, long partitioned) {
     return SOLVE_METHOD == DPImplementMethod.RECURSION ? recursiveSolve(addendSet, addendSet.length, partitioned) : tableFillSolve(addendSet, partitioned);
   }
 
@@ -64,9 +64,9 @@ public class DPIntegerPartition implements IntegerPartition {
    * @return 返回可用的所有划分方案
    */
   @Override
-  public ArrayList<ArrayList<Integer>> solveWithPartitions(int[] addendSet, int partitioned) {
-    var paths = new ArrayList<ArrayList<Integer>>();
-    var path = new ArrayList<Integer>();
+  public ArrayList<ArrayList<Long>> solveWithPartitions(long[] addendSet, long partitioned) {
+    var paths = new ArrayList<ArrayList<Long>>();
+    var path = new ArrayList<Long>();
 
     recursiveSolveWithPartitionsImpl(addendSet, addendSet.length, partitioned, paths, path);
 
@@ -80,9 +80,9 @@ public class DPIntegerPartition implements IntegerPartition {
    * @param partitioned 等待被拆分的正整数
    * @return 返回总的划分数量
    */
-  private int tableFillSolve(int[] addendSet, int partitioned) {
+  private long tableFillSolve(long[] addendSet, long partitioned) {
     // 定义 dp 状态空间，默认全部为 0
-    int[][] dp = new int[addendSet.length + 1][partitioned + 1];
+    long[][] dp = new long[addendSet.length + 1][(int)partitioned + 1];
 
     // 初始化将 partitionedValue 为 0 时的 dp 值设置为 1
     for (int i = 0; i <= addendSet.length; i++) {
@@ -92,13 +92,13 @@ public class DPIntegerPartition implements IntegerPartition {
     // 从初始值开始遍历，逐步构造获得最终结果，注意从 1 开始计数，1 表示addendSet中的第一个元素
     for (int i = 1; i <= addendSet.length; i++) {
       for (int j = 1; j < partitioned + 1; j++) {
-        var partitionedForInclude = j - addendSet[i - 1];
+        var partitionedForInclude = (int)(j - addendSet[i - 1]);
         var dpForInclude = (partitionedForInclude < 0 ? 0 : dp[i][partitionedForInclude]);
         dp[i][j] = dpForInclude + dp[i - 1][j];
       }
     }
 
-    return dp[addendSet.length][partitioned];
+    return dp[addendSet.length][(int)partitioned];
   }
 
   /**
@@ -112,11 +112,11 @@ public class DPIntegerPartition implements IntegerPartition {
    * <p>
    * 采取和动态规划求解器相同的思路，只不过将问题转化为递归方式解决。
    */
-  private int recursiveSolve(int[] addendSet, int addendSize, int partitionedValue) {
+  private long recursiveSolve(long[] addendSet, int addendSize, long partitionedValue) {
     if (partitionedValue < 0 || addendSize <= 0) {
-      return 0;
+      return 0L;
     } else if (partitionedValue == 0) {
-      return 1;
+      return 1L;
     } else {
       return recursiveSolve(addendSet, addendSize, partitionedValue - addendSet[addendSize - 1]) +
         recursiveSolve(addendSet, addendSize - 1, partitionedValue);
@@ -132,7 +132,7 @@ public class DPIntegerPartition implements IntegerPartition {
    * @param paths            可用的划分集合，以树遍历路径的形式表示
    * @param curPath          单条划分，不一定可用
    */
-  private void recursiveSolveWithPartitionsImpl(int[] addendSet, int addendSize, int partitionedValue, ArrayList<ArrayList<Integer>> paths, ArrayList<Integer> curPath) {
+  private void recursiveSolveWithPartitionsImpl(long[] addendSet, int addendSize, long partitionedValue, ArrayList<ArrayList<Long>> paths, ArrayList<Long> curPath) {
     if (partitionedValue < 0 || addendSize <= 0) {
       // 说明路径不可用
       curPath.clear();

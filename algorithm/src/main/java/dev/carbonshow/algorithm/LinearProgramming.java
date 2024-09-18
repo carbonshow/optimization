@@ -5,6 +5,7 @@ import org.apache.commons.math4.legacy.optim.linear.*;
 import org.apache.commons.math4.legacy.optim.nonlinear.scalar.GoalType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class LinearProgramming {
     public static void main(String[] args) {
@@ -28,6 +29,7 @@ public class LinearProgramming {
         PointValuePair solution = new SimplexSolver().optimize(objectiveFunction, new LinearConstraintSet(constraints), GoalType.MINIMIZE);
         if (solution != null) {
             double minValue = solution.getValue();
+            System.out.println("points: " + Arrays.toString(solution.getPoint()));
             System.out.println("the optimization value: " + minValue);
         }
     }

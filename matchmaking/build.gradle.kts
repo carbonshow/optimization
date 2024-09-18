@@ -13,8 +13,7 @@ dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
   implementation("ch.qos.logback:logback-classic:1.5.6")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.17.2")
-
-
+  implementation("org.jgrapht:jgrapht-core:1.5.2")
 
   testImplementation(platform("org.junit:junit-bom:5.10.0"))
   testImplementation("org.junit.jupiter:junit-jupiter")

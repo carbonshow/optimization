@@ -24,6 +24,11 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
+jmh {
+    includes = listOf("IntegerPartitionBenchmark") // include pattern (regular expression) for benchmarks to be executed
+    iterations = 5 // Number of measurement iterations to do.
+}
+
 tasks.register<JavaExec>("integer-partition") {
     mainClass = "dev.carbonshow.algorithm.IntegerPartition"
     classpath = sourceSets.main.get().runtimeClasspath

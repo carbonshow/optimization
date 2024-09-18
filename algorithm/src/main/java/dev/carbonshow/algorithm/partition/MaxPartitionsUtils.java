@@ -12,11 +12,11 @@ public class MaxPartitionsUtils {
      * @param orderedAddends      输出的升序排列的加数
      * @param orderedAddendCounts 输出的加数数量，和 orderedAddends 一一对应
      */
-    static void addendsToArray(Map<Integer, Integer> addends, int[] orderedAddends, int[] orderedAddendCounts) {
+    static void addendsToArray(Map<Long, Long> addends, long[] orderedAddends, long[] orderedAddendCounts) {
         // 对加数进行升序排序
         var sortedAddendMap = new TreeMap<>(addends);
         int i = 0;
-        for (Integer addend : sortedAddendMap.keySet()) {
+        for (Long addend : sortedAddendMap.keySet()) {
             orderedAddends[i] = addend;
             orderedAddendCounts[i] = sortedAddendMap.get(addend);
             i++;

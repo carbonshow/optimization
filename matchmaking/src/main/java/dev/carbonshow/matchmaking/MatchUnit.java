@@ -8,7 +8,6 @@ import java.util.ArrayList;
  * @param matchUnitId 匹配单元 ID
  * @param userIds 匹配单元内包含的用户 ID 列表
  * @param rank 当前匹配单元综合的星数
- * @param tier 当前匹配单元综合的段位
  * @param trueSkillMu 当前匹配单元综合的 true skill 正态分布的期望
  * @param trueSkillSigma 当前匹配单元综合的 true skill 正态分布的标准差
  * @param overallNBA 当前匹配单元综合的 NBA 模式 overall
@@ -18,9 +17,13 @@ public record MatchUnit(
   long matchUnitId,
   ArrayList<Long> userIds,
   int rank,
-  int tier,
   int trueSkillMu,
   int trueSkillSigma,
   int overallNBA,
   int overallStreet){
+
+    /** 获取当前匹配单元所含用户数 */
+    public int userCount() {
+        return userIds.size();
+    }
 }

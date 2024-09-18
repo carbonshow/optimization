@@ -16,7 +16,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param matchUnitId 匹配单元的唯一 ID
  * @param userId 匹配单元当前包含的用户 ID
  * @param rank 玩家当前排位赛星数
- * @param tier 玩家当前排位赛段位
  * @param trueSkillMu true skill 的 μ 值
  * @param trueSkillSigma true skill 的 σ 值
  * @param overallNBA NBA 模式的 overall
@@ -30,8 +29,6 @@ public record MatchMakingUserData(
   long userId,
   @JsonProperty("rank")
   int rank,
-  @JsonProperty("tier")
-  int tier,
   @JsonProperty("tsmu")
   int trueSkillMu,
   @JsonProperty("tssigma")

@@ -10,20 +10,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IntegerPartitionTest {
   // 组队问题
-  static int[] group3 = new int[]{1, 2, 3};
-  static int[] group5 = new int[]{1, 2, 3, 4, 5};
-  static int[] group10 = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  static long[] group3 = new long[]{1, 2, 3};
+  static long[] group5 = new long[]{1, 2, 3, 4, 5};
+  static long[] group10 = new long[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
   // 硬币问题
-  static int[] coin1 = new int[]{2, 3, 4};
-  static int[] coin2 = new int[]{2, 5, 8, 9, 10};
-  static int[] coin3 = new int[]{8, 9, 10};
+  static long[] coin1 = new long[]{2, 3, 4};
+  static long[] coin2 = new long[]{2, 5, 8, 9, 10};
+  static long[] coin3 = new long[]{8, 9, 10};
 
-  // 基于动态规划的求解器
+  // 基于自底向上动态规划的求解器
   DPIntegerPartition tableFillResolver = new DPIntegerPartition(DPIntegerPartition.DPImplementMethod.TABLE_FILL);
 
-  // 基于循环递归方式的求解器
+  // 基于自顶向下动态规划的求解器
   DPIntegerPartition recursiveResolver = new DPIntegerPartition();
+
+  // 基于 CP-SAT 的求解器
+  CPIntegerPartition cpResolver = new CPIntegerPartition();
 
   @Tag("partition")
   @Tag("dynamic-programming")
@@ -42,6 +45,15 @@ class IntegerPartitionTest {
     assertEquals(recursiveResolver.solve(group5, 5), 7);
     assertEquals(recursiveResolver.solve(group10, 10), 42);
   }
+
+  @Tag("partition")
+  @Tag("cp-sat")
+  @Test
+  public void testPartitionUseCP() {
+    cpResolver.solveWithPartitions(group3, 3);
+  }
+
+
 
   @Tag("coins")
   @Tag("dynamic-programming")
@@ -66,13 +78,13 @@ class IntegerPartitionTest {
   @Tag("recursive")
   @Test
   public void testCoinsUseRecursiveWithPaths() {
-    var paths = recursiveResolver.solveWithPartitions(coin2, 10);
+    var paths = recursiveResolver.solveWithPartitions(coin2, 10L);
 
-    ArrayList<ArrayList<Integer>> realPaths = new ArrayList<>();
-    realPaths.add(new ArrayList<>(List.of(10)));
-    realPaths.add(new ArrayList<>(List.of(8, 2)));
-    realPaths.add(new ArrayList<>(List.of(5, 5)));
-    realPaths.add(new ArrayList<>(List.of(2, 2, 2, 2, 2)));
+    ArrayList<ArrayList<Long>> realPaths = new ArrayList<>();
+    realPaths.add(new ArrayList<>(List.of(10L)));
+    realPaths.add(new ArrayList<>(List.of(8L, 2L)));
+    realPaths.add(new ArrayList<>(List.of(5L, 5L)));
+    realPaths.add(new ArrayList<>(List.of(2L, 2L, 2L, 2L, 2L)));
 
     assertEquals(paths, realPaths);
   }
@@ -82,18 +94,30 @@ class IntegerPartitionTest {
   @Tag("recursive")
   @Test
   public void testPartitionUseRecursiveWithPaths() {
-    var paths = recursiveResolver.solveWithPartitions(group5, 5);
+    var paths = recursiveResolver.solveWithPartitions(group5, 5L);
 
-    ArrayList<ArrayList<Integer>> realPaths = new ArrayList<>();
-    realPaths.add(new ArrayList<>(List.of(5)));
-    realPaths.add(new ArrayList<>(List.of(4, 1)));
-    realPaths.add(new ArrayList<>(List.of(3, 2)));
-    realPaths.add(new ArrayList<>(List.of(3, 1, 1)));
-    realPaths.add(new ArrayList<>(List.of(2, 2, 1)));
-    realPaths.add(new ArrayList<>(List.of(2, 1, 1, 1)));
-    realPaths.add(new ArrayList<>(List.of(1, 1, 1, 1, 1)));
+    ArrayList<ArrayList<Long>> realPaths = new ArrayList<>();
+    realPaths.add(new ArrayList<>(List.of(5L)));
+    realPaths.add(new ArrayList<>(List.of(4L, 1L)));
+    realPaths.add(new ArrayList<>(List.of(3L, 2L)));
+    realPaths.add(new ArrayList<>(List.of(3L, 1L, 1L)));
+    realPaths.add(new ArrayList<>(List.of(2L, 2L, 1L)));
+    realPaths.add(new ArrayList<>(List.of(2L, 1L, 1L, 1L)));
+    realPaths.add(new ArrayList<>(List.of(1L, 1L, 1L, 1L, 1L)));
 
     assertEquals(paths, realPaths);
+
+    paths = cpResolver.solveWithPartitions(group5, 5);
+    assertEquals(paths.size(), realPaths.size());
+    for (var path: paths) {
+      System.out.printf("Partition: %s\n", path.toString());
+    }
+
+    paths = cpResolver.solveWithPartitions(group10, 10);
+    assertEquals(paths.size(), 42);
+    for (var path: paths) {
+      System.out.printf("Partition: %s\n", path.toString());
+    }
   }
 
 }

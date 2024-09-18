@@ -10,12 +10,12 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MaxPartitionsTest {
-    final private Map<Integer, Integer> ADDENDS = Map.of(1, 100, 2, 40, 5, 10);
-    final private int PARTITIONED = 10;
-    final private ArrayList<Map<Integer, Long>> PARTITION_PLANS = new ArrayList<>(Arrays.asList(Map.of(1, 6L, 2, 2L),
-            Map.of(1, 1L, 2, 2L, 5, 1L),
-            Map.of(5,2L),
-            Map.of(1,5L,5,1L)
+    final private Map<Long, Long> ADDENDS = Map.of(1L, 100L, 2L, 40L, 5L, 10L);
+    final private long PARTITIONED = 10L;
+    final private ArrayList<Map<Long, Long>> PARTITION_PLANS = new ArrayList<>(Arrays.asList(Map.of(1L, 6L, 2L, 2L),
+            Map.of(1L, 1L, 2L, 2L, 5L, 1L),
+            Map.of(5L,2L),
+            Map.of(1L,5L,5L,1L)
             ));
 
     @Tag("TwoPhase")
@@ -53,12 +53,12 @@ class MaxPartitionsTest {
         }
 
         // 校验方案总数
-        int totalPartitionCount = PartitionData.totalPartitionsCount(partitions);
+        var totalPartitionCount = PartitionData.totalPartitionsCount(partitions);
         assertEquals(totalPartitionCount, 23);
 
         // 校验加数使用数量限制
         var addendUseCounts = PartitionData.addendsUsedCount(partitions);
-        for (Map.Entry<Integer, Long> entry : addendUseCounts.entrySet()) {
+        for (var entry : addendUseCounts.entrySet()) {
             assertTrue(entry.getValue() <= ADDENDS.get(entry.getKey()));
         }
     }

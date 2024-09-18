@@ -20,5 +20,5 @@ public interface TwoPhaseMaxPartitions extends MaxPartitions {
      * @param partitionPlans 划分方案
      * @return 返回划分的最终结果
      */
-    ArrayList<PartitionData> solveWithPartitionPlan(Map<Integer, Integer> addends, int partitioned, ArrayList<Map<Integer, Long>> partitionPlans);
+    ArrayList<PartitionData> solveWithPartitionPlan(Map<Long, Long> addends, long partitioned, ArrayList<Map<Long, Long>> partitionPlans);
 }

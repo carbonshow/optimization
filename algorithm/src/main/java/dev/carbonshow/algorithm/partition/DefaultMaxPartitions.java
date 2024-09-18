@@ -46,9 +46,9 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * @return 返回最大划分的细节数据，包含每个划分的组成，以及该划分实例化之后的数据，不存在则返回 null
    */
   @Override
-  public ArrayList<PartitionData> solve(Map<Integer, Integer> addends, int partitioned) {
-    var orderedAddends = new int[addends.size()];
-    var orderedAddendCounts = new int[addends.size()];
+  public ArrayList<PartitionData> solve(Map<Long, Long> addends, long partitioned) {
+    var orderedAddends = new long[addends.size()];
+    var orderedAddendCounts = new long[addends.size()];
     MaxPartitionsUtils.addendsToArray(addends, orderedAddends, orderedAddendCounts);
 
     var partitionPlans = solveIntegerPartition(orderedAddends, partitioned);
@@ -65,9 +65,9 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * @return 返回最大划分的细节数据，包含每个划分的组成，以及该划分实例化之后的数据
    */
   @Override
-  public ArrayList<PartitionData> solveWithPartitionPlan(Map<Integer, Integer> addends, int partitioned, ArrayList<Map<Integer, Long>> partitionPlans) {
-    var orderedAddends = new int[addends.size()];
-    var orderedAddendCounts = new int[addends.size()];
+  public ArrayList<PartitionData> solveWithPartitionPlan(Map<Long, Long> addends, long partitioned, ArrayList<Map<Long, Long>> partitionPlans) {
+    var orderedAddends = new long[addends.size()];
+    var orderedAddendCounts = new long[addends.size()];
     MaxPartitionsUtils.addendsToArray(addends, orderedAddends, orderedAddendCounts);
 
     return solveImpl(orderedAddends, orderedAddendCounts, partitionPlans);
@@ -85,7 +85,7 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * @param partitionPlans 划分方案列表，每个划分方案以 Map 形式表示，key 是加数，value 是加数出现次数
    * @return 返回划分详细数据列表，不存在则返回 null
    */
-  private ArrayList<PartitionData> solveImpl(int[] orderedAddends, int[] orderedAddendCounts, ArrayList<Map<Integer, Long>> partitionPlans) {
+  private ArrayList<PartitionData> solveImpl(long[] orderedAddends, long[] orderedAddendCounts, ArrayList<Map<Long, Long>> partitionPlans) {
 
     // 进行线性规划，计算划分方案实例化之后总数最大化的情况
     var planCounts = solveIntegerProgramming(orderedAddends, orderedAddendCounts, partitionPlans);
@@ -107,7 +107,7 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * @param partitioned    目标凑数值，每种划分方案中加数组合之和
    * @return 划分方案列表，每个方案是一个 Map，key 表示加数，value 表示加数数量
    */
-  private ArrayList<Map<Integer, Long>> solveIntegerPartition(int[] orderedAddends, int partitioned) {
+  private ArrayList<Map<Long, Long>> solveIntegerPartition(long[] orderedAddends, long partitioned) {
 
     // 获取排列方案列表
     return partitionSolver.solveWithPartitions(orderedAddends, partitioned)
@@ -125,12 +125,12 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
    * @param partitionPlans 划分方案列表
    * @return 返回各个方案的出现次数，如果无解则返回 null
    */
-  private ArrayList<Integer> solveIntegerProgramming(int[] addends, int[] addendCounts, ArrayList<Map<Integer, Long>> partitionPlans) {
+  private ArrayList<Integer> solveIntegerProgramming(long[] addends, long[] addendCounts, ArrayList<Map<Long, Long>> partitionPlans) {
     // 先清理优化器，之前可能已经调用过
     programmingSolver.clear();
 
     // 决策变量，每种划分方案出现的次数，取值范围是 [0, max(c(i))]，c(i)表示第 i 个加数的总数
-    int addendMaxCount = NumberUtils.max(addendCounts);
+    var addendMaxCount = NumberUtils.max(addendCounts);
     ArrayList<MPVariable> partitionPlanCountVariables = new ArrayList<>(partitionPlans.size());
     for (int i = 0; i < partitionPlans.size(); i++) {
       partitionPlanCountVariables.add(programmingSolver.makeIntVar(0, addendMaxCount, "p"+i));
@@ -138,8 +138,8 @@ public class DefaultMaxPartitions implements TwoPhaseMaxPartitions {
 
     // 约束条件，每个加数在所有方案中出现的总次数不得超过其总数，所以约束条件数量和加数相同
     for (int i =0; i < addends.length; i++) {
-      int addend = addends[i];
-      int addendCountTotal = addendCounts[i];
+      final var addend = addends[i];
+      final var addendCountTotal = addendCounts[i];
 
       // 加数的约束条件，使用的总次数一定处于 [0, addendCountTotal] 之内
       var constraint = programmingSolver.makeConstraint(0, addendCountTotal, "c"+i);
