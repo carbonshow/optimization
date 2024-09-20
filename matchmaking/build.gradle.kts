@@ -14,6 +14,8 @@ dependencies {
   implementation("ch.qos.logback:logback-classic:1.5.6")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.17.2")
   implementation("org.jgrapht:jgrapht-core:1.5.2")
+  implementation("com.h2database:h2:2.3.232")
+
 
   testImplementation(platform("org.junit:junit-bom:5.10.0"))
   testImplementation("org.junit.jupiter:junit-jupiter")

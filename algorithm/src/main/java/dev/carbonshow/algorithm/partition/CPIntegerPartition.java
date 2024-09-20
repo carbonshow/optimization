@@ -2,10 +2,8 @@ package dev.carbonshow.algorithm.partition;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
-import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 /**
@@ -55,6 +53,23 @@ public class CPIntegerPartition implements IntegerPartition {
         }
     }
 
+    // 定义划分结果计数器，只记录解的数量而非细节
+    static class PartitionCounter extends CpSolverSolutionCallback {
+        // 保存数量
+        private long count = 0;
+
+        // 每找到可用解则添加到本地
+        @Override
+        public void onSolutionCallback() {
+            count++;
+        }
+
+        // 返回所有可用解
+        public long getSolutionsCount() {
+            return count;
+        }
+    }
+
     CPIntegerPartition() {
         Loader.loadNativeLibraries();
     }
@@ -72,20 +87,43 @@ public class CPIntegerPartition implements IntegerPartition {
      * @return 返回所有符合要求的划分
      */
     @Override
-    public ArrayList<ArrayList<Long>> solveWithPartitions(long[] addendSet, long partitioned) {
+    public ArrayList<ArrayList<Long>> solveWithPartitions(long[] addendSet, long partitioned, CpSolverSolutionCallback cb) {
+        solveImpl(addendSet, partitioned, cb);
         var cpModel = new CpModel();
-        cpModel.clearObjective();
-        cpModel.clearAssumptions();
-        cpModel.clearHints();
+
+        IntVar[] x = new IntVar[addendSet.length];
+
+        PartitionRecorder cb = new PartitionRecorder(addendSet, x);
+        for (int i = 0; i < x.length; i++) {
+            x[i] = cpModel.newIntVar(0, partitioned / addendSet[i], "x" + i);
+        }
+
+        cpModel.addEquality(LinearExpr.weightedSum(x, addendSet), partitioned);
+
+        CpSolver solver = new CpSolver();
+        solver.getParameters().setEnumerateAllSolutions(true);
+        solver.solve(cpModel, cb);
+
+        return cb.getSolutions();
+    }
+
+
+    /**
+     * 获取所有满足约束条件的划分——即每个划分包含的加数之和等于被划分的整数
+     *
+     * @param addendSet   加数集合，内部不能有重复的元素，必须均为正整数。不同数量的不同加数之和应该等于 `partitioned`
+     * @param partitioned 被划分的正整数
+     */
+    private void solveImpl(long[] addendSet, long partitioned, CpSolverSolutionCallback cb) {
+        var cpModel = new CpModel();
 
         IntVar[] x = new IntVar[addendSet.length];
         for (int i = 0; i < x.length; i++) {
-            x[i] = cpModel.newIntVar(0, partitioned / NumberUtils.min(addendSet), "x" + i);
+            x[i] = cpModel.newIntVar(0, partitioned / addendSet[i], "x" + i);
         }
 
-        cpModel.addEquality(LinearExpr.weightedSum(x, Arrays.stream(addendSet).toArray()), partitioned);
+        cpModel.addEquality(LinearExpr.weightedSum(x, addendSet), partitioned);
 
-        PartitionRecorder cb = new PartitionRecorder(addendSet, x);
         CpSolver solver = new CpSolver();
         solver.getParameters().setEnumerateAllSolutions(true);
         solver.solve(cpModel, cb);

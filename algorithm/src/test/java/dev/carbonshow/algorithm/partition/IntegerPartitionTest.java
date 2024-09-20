@@ -5,14 +5,16 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.LongStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class IntegerPartitionTest {
   // 组队问题
   static long[] group3 = new long[]{1, 2, 3};
-  static long[] group5 = new long[]{1, 2, 3, 4, 5};
-  static long[] group10 = new long[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+  static long[] group5 = LongStream.rangeClosed(1, 5).toArray();
+  static long[] group10 = LongStream.rangeClosed(1, 10).toArray();
+  static long[] group100 = LongStream.rangeClosed(1, 100).toArray();
 
   // 硬币问题
   static long[] coin1 = new long[]{2, 3, 4};
@@ -35,6 +37,7 @@ class IntegerPartitionTest {
     assertEquals(tableFillResolver.solve(group3, 3), 3);
     assertEquals(tableFillResolver.solve(group5, 5), 7);
     assertEquals(tableFillResolver.solve(group10, 10), 42);
+    System.out.println(tableFillResolver.solve(group100, 100));
   }
 
   @Tag("partition")
@@ -44,16 +47,30 @@ class IntegerPartitionTest {
     assertEquals(recursiveResolver.solve(group3, 3), 3);
     assertEquals(recursiveResolver.solve(group5, 5), 7);
     assertEquals(recursiveResolver.solve(group10, 10), 42);
+
+    var result = recursiveResolver.solveWithPartitions(group100, 100);
+    System.out.println("partitions: " + result.size());
   }
+
 
   @Tag("partition")
   @Tag("cp-sat")
   @Test
   public void testPartitionUseCP() {
-    cpResolver.solveWithPartitions(group3, 3);
+    var result = cpResolver.solveWithPartitions(group10, 10);
+    System.out.println("partitions: " + result.size());
+    for (var partition: result) {
+      System.out.println(partition);
+    }
   }
 
-
+  @Tag("partition100")
+  @Tag("cp-sat")
+  @Test
+  public void testPartitionUseCP100() {
+    var result = cpResolver.solveWithPartitions(group100, 100);
+    System.out.println("result size: " + result.size());
+  }
 
   @Tag("coins")
   @Tag("dynamic-programming")
