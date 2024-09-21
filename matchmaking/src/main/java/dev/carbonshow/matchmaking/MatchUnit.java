@@ -1,7 +1,7 @@
 package dev.carbonshow.matchmaking;
 
-import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,7 +19,7 @@ import java.util.Map;
 public record MatchUnit(
         long matchUnitId,
         long enterTimestamp,
-        ArrayList<Long> userIds,
+        List<Long> userIds,
         int rank,
         BitSet positions,
         double skill,
@@ -32,5 +32,15 @@ public record MatchUnit(
      */
     public int userCount() {
         return userIds.size();
+    }
+
+    public long positionAsLong() {
+        long longValue = 0;
+        for (int bit = 0; bit < positions.length(); bit++) {
+            if (positions.get(bit)) {
+                longValue |= (1L << bit);
+            }
+        }
+        return longValue;
     }
 }

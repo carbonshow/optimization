@@ -5,12 +5,16 @@ import com.google.ortools.sat.*;
 
 import java.util.ArrayList;
 
-
 /**
  * 基于 CP-SAT 的解决方案，全称是 Constraint Programming Satisfiability。即不指定优化目标而是给出约束条件，来找到可行解。
  * <p>
- * 具体到整数划分问题，约束条件只有一个即加数之和等于被划分的整数
- * 性能比动态规划会低很多，面对整数 10 使用[1,10]这个具体场景，每次操作的时间开销相差 1000 倍
+ *     具体到整数划分问题，约束条件只有一个即加数之和等于被划分的整数
+ *     性能比动态规划会低很多，面对整数 10 使用[1,10]这个具体场景，每次操作的时间开销相差 1000 倍
+ * </p>
+ * <p>
+ *     <b>注意:</b>
+ *     <p>如果用于大规模问题，比如将 100 用[1,100]分拆，结果有数亿，这时使用 CP 方法，性能非常低，不建议使用</p>
+ * </p>
  */
 public class CPIntegerPartition implements IntegerPartition {
     // 定义划分结果记录器，在找到合适解后保存
@@ -25,9 +29,9 @@ public class CPIntegerPartition implements IntegerPartition {
         private final ArrayList<ArrayList<Long>> partitions = new ArrayList<>();
 
         // 构造函数，获取加数变量
-        public PartitionRecorder(long[] addendSet, IntVar[] variables) {
+        public PartitionRecorder(long[] addendSet, IntVar[] x) {
             addends = addendSet;
-            variableArray = variables;
+            variableArray = x;
         }
 
         // 每找到可用解则添加到本地
@@ -76,7 +80,10 @@ public class CPIntegerPartition implements IntegerPartition {
 
     @Override
     public long solve(long[] addendSet, long partitioned) {
-        return solveWithPartitions(addendSet, partitioned).size();
+        PartitionCounter cb = new PartitionCounter();
+        IntVar[] x = new IntVar[addendSet.length];
+        solveImpl(addendSet, partitioned, cb, x);
+        return cb.getSolutionsCount();
     }
 
     /**
@@ -87,26 +94,12 @@ public class CPIntegerPartition implements IntegerPartition {
      * @return 返回所有符合要求的划分
      */
     @Override
-    public ArrayList<ArrayList<Long>> solveWithPartitions(long[] addendSet, long partitioned, CpSolverSolutionCallback cb) {
-        solveImpl(addendSet, partitioned, cb);
-        var cpModel = new CpModel();
-
+    public ArrayList<ArrayList<Long>> solveWithPartitions(long[] addendSet, long partitioned) {
         IntVar[] x = new IntVar[addendSet.length];
-
         PartitionRecorder cb = new PartitionRecorder(addendSet, x);
-        for (int i = 0; i < x.length; i++) {
-            x[i] = cpModel.newIntVar(0, partitioned / addendSet[i], "x" + i);
-        }
-
-        cpModel.addEquality(LinearExpr.weightedSum(x, addendSet), partitioned);
-
-        CpSolver solver = new CpSolver();
-        solver.getParameters().setEnumerateAllSolutions(true);
-        solver.solve(cpModel, cb);
-
+        solveImpl(addendSet, partitioned, cb, x);
         return cb.getSolutions();
     }
-
 
     /**
      * 获取所有满足约束条件的划分——即每个划分包含的加数之和等于被划分的整数
@@ -114,10 +107,9 @@ public class CPIntegerPartition implements IntegerPartition {
      * @param addendSet   加数集合，内部不能有重复的元素，必须均为正整数。不同数量的不同加数之和应该等于 `partitioned`
      * @param partitioned 被划分的正整数
      */
-    private void solveImpl(long[] addendSet, long partitioned, CpSolverSolutionCallback cb) {
+    private void solveImpl(long[] addendSet, long partitioned, CpSolverSolutionCallback cb, IntVar[] x) {
         var cpModel = new CpModel();
 
-        IntVar[] x = new IntVar[addendSet.length];
         for (int i = 0; i < x.length; i++) {
             x[i] = cpModel.newIntVar(0, partitioned / addendSet[i], "x" + i);
         }
@@ -127,7 +119,5 @@ public class CPIntegerPartition implements IntegerPartition {
         CpSolver solver = new CpSolver();
         solver.getParameters().setEnumerateAllSolutions(true);
         solver.solve(cpModel, cb);
-
-        return cb.getSolutions();
     }
 }

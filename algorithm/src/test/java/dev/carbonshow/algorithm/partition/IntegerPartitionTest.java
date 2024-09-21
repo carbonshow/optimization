@@ -68,8 +68,8 @@ class IntegerPartitionTest {
   @Tag("cp-sat")
   @Test
   public void testPartitionUseCP100() {
-    var result = cpResolver.solveWithPartitions(group100, 100);
-    System.out.println("result size: " + result.size());
+    var result = cpResolver.solve(group100, 100);
+    System.out.println("result size: " + result);
   }
 
   @Tag("coins")

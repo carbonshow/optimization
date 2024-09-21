@@ -3,7 +3,7 @@ package dev.carbonshow.matchmaking;
 /**
  * 匹配池，用于高效管理内部存储单元
  */
-interface MatchMakingPool {
+public interface MatchMakingPool {
 
     /**
      * 向池子中添加新的匹配单元
@@ -22,6 +22,18 @@ interface MatchMakingPool {
     int removeMatchUnit(long matchUnitId);
 
     /**
+     * 根据匹配单元 ID 获取对应数据
+     * @param matchUnitId 匹配单元唯一 ID
+     */
+    MatchUnit getMatchUnit(long matchUnitId);
+
+    /**
+     * 返回所有匹配单元的数组
+     * @return 数组形式的匹配单元
+     */
+    MatchUnit[] matchUnits();
+
+    /**
      * 获取匹配单元总数
      * @return 匹配单元总数
      */
@@ -35,8 +47,17 @@ interface MatchMakingPool {
 
     /**
      * 当前匹配池理论上可促成的单局的最大数量
-     * @param criteria 匹配参数和标准
      * @return 返回可以生成的最大单局数量
      */
     int maxGameCount();
+
+    /**
+     * 获取匹配参数和衡量标准
+     */
+    MatchMakingCriteria getCriteria();
+
+    /**
+     * 返回当前匹配池的名称
+     */
+    String poolName();
 }

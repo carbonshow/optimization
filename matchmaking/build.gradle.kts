@@ -15,6 +15,7 @@ dependencies {
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.17.2")
   implementation("org.jgrapht:jgrapht-core:1.5.2")
   implementation("com.h2database:h2:2.3.232")
+  implementation("com.google.ortools:ortools-java:9.10.4067")
 
 
   testImplementation(platform("org.junit:junit-bom:5.10.0"))
