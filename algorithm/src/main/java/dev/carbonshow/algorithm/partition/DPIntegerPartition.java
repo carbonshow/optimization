@@ -23,7 +23,7 @@ public class DPIntegerPartition implements IntegerPartition {
   /**
    * 默认是递归实现
    */
-  DPIntegerPartition() {
+  public DPIntegerPartition() {
     this(DPImplementMethod.RECURSION);
   }
 
@@ -32,7 +32,7 @@ public class DPIntegerPartition implements IntegerPartition {
    *
    * @param implementMethod 动态规划的实现方法
    */
-  DPIntegerPartition(DPImplementMethod implementMethod) {
+  public DPIntegerPartition(DPImplementMethod implementMethod) {
     SOLVE_METHOD = implementMethod;
   }
 

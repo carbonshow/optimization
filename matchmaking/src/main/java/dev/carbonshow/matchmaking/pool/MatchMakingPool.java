@@ -1,4 +1,8 @@
-package dev.carbonshow.matchmaking;
+package dev.carbonshow.matchmaking.pool;
+
+import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
+
+import java.util.ArrayList;
 
 /**
  * 匹配池，用于高效管理内部存储单元
@@ -17,9 +21,15 @@ public interface MatchMakingPool {
      * 根据匹配单元的唯一 ID，移除对应单元
      *
      * @param matchUnitId 匹配单元的唯一 ID
-     * @return 返回实际删除的单元数量
+     * @return true 表示实际删除了单元；false 表示未删除，比如单元不存在
      */
-    int removeMatchUnit(long matchUnitId);
+    boolean removeMatchUnit(long matchUnitId);
+
+    /**
+     * 匹配单元亲和性相关参数是时变的，在该接口中实现对应逻辑
+     * @param currentTimestamp 当前时间戳，单位自定义，内部保持一直即可
+     */
+    default void update(long currentTimestamp) {}
 
     /**
      * 根据匹配单元 ID 获取对应数据
@@ -32,6 +42,17 @@ public interface MatchMakingPool {
      * @return 数组形式的匹配单元
      */
     MatchUnit[] matchUnits();
+
+    /**
+     * 返回互斥的匹配单元列表，这里只返回索引，而非 MatchUnit ID，返回的索引和 `units`
+     * 数组保持一致
+     * <ul> 注意事项
+     *     <li>使用组合方式避免重复，即 1 和 2 如果出现过，就不会出现 2 和 1；</li>
+     * </ul>
+     * @param units 数组形式的匹配单元列表
+     * @return 返回二维数组，一维表示第 i 个单元，二维表示和第 i 个单元互斥的其它单元的索引
+     */
+    ArrayList<ArrayList<Integer>> getMutableExclusiveMatchUnits(MatchUnit[] units);
 
     /**
      * 获取匹配单元总数

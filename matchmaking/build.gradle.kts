@@ -12,10 +12,13 @@ repositories {
 dependencies {
   implementation("org.slf4j:slf4j-api:1.7.30")
   implementation("ch.qos.logback:logback-classic:1.5.6")
+  implementation("org.apache.commons:commons-math3:3.6.1")
   implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-csv:2.17.2")
   implementation("org.jgrapht:jgrapht-core:1.5.2")
   implementation("com.h2database:h2:2.3.232")
+  implementation("org.orbisgis:h2gis:2.2.3")
   implementation("com.google.ortools:ortools-java:9.10.4067")
+  implementation(project(":algorithm"))
 
 
   testImplementation(platform("org.junit:junit-bom:5.10.0"))

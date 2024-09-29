@@ -1,7 +1,9 @@
-package dev.carbonshow.matchmaking;
+package dev.carbonshow.matchmaking.pool;
+
+import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 
 import java.sql.*;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * 匹配池中多个匹配单元，存在频繁的更新、删除，以及复杂的过滤、排序。
@@ -11,14 +13,9 @@ import java.util.HashMap;
  *     <li>数据库维护需要做复杂过滤、排序的部分字段</li>
  * </ul>
  */
-public class MatchMakingPoolInMemDB implements MatchMakingPool {
-    final private MatchMakingCriteria criteria;
+public class MatchMakingPoolInMemDB extends MatchMakingPoolBasic {
     final private Connection connection;
-    final private String name;
     final private String dbTableName;
-
-    final private HashMap<Long, MatchUnit> units = new HashMap<>();
-    private int userCount = 0;
 
     /**
      * 设置匹配配置参数和指标信息，并创建内存数据库用于管理、查询匹配单元
@@ -27,90 +24,63 @@ public class MatchMakingPoolInMemDB implements MatchMakingPool {
      * @param name     当前匹配池的名称
      * @throws SQLException 创建内存数据库可能出错
      */
-    MatchMakingPoolInMemDB(MatchMakingCriteria criteria, String name) throws SQLException {
-        this.criteria = criteria;
-        this.name = name;
+    public MatchMakingPoolInMemDB(MatchMakingCriteria criteria, String name) throws SQLException {
+        super(criteria, name);
         dbTableName = "mmpool_" + name.toLowerCase();
         connection = DriverManager.getConnection("jdbc:h2:mem:matchmaking", "user", "password");
 
         initializeDatabase();
     }
 
+    /**
+     * 添加成功则向数据库更新
+     *
+     * @param matchUnit 待添加的匹配单元
+     */
     @Override
     public boolean addMatchUnit(MatchUnit matchUnit) {
         final String addMatchUnit = "INSERT INTO " + dbTableName + " VALUES(?, ?, ?, ?, ?, ?, ?)";
         try {
             PreparedStatement statement = connection.prepareStatement(addMatchUnit);
             statement.setLong(1, matchUnit.matchUnitId());
-            statement.setLong(2, matchUnit.enterTimestamp());
+            statement.setLong(2, matchUnit.timeVaryingParameters().startTimestamp());
             statement.setInt(3, matchUnit.userCount());
-            statement.setInt(4, matchUnit.rank());
+            statement.setInt(4, matchUnit.timeVaryingParameters().getRank());
             statement.setLong(5, matchUnit.positionAsLong());
-            statement.setDouble(6, matchUnit.skill());
+            statement.setDouble(6, matchUnit.timeVaryingParameters().getSkill());
             statement.setDouble(7, matchUnit.expectedWinProbability());
             int count = statement.executeUpdate();
             if (count > 0) {
-                units.put(matchUnit.matchUnitId(), matchUnit);
-                userCount += matchUnit.userCount();
-                return true;
+                // 数据库添加成功在进行本地添加
+                super.addMatchUnit(matchUnit);
             }
-            return false;
+            return count > 0;
         } catch (SQLException e) {
+            // 数据库添加失败，那么回滚
+            super.removeMatchUnit(matchUnit.matchUnitId());
             return false;
         }
     }
 
     @Override
-    public int removeMatchUnit(long matchUnitId) {
+    public boolean removeMatchUnit(long matchUnitId) {
         final String removeMatchUnit = "DELETE FROM " + dbTableName + " WHERE ID = ?";
         try {
             PreparedStatement statement = connection.prepareStatement(removeMatchUnit);
             statement.setLong(1, matchUnitId);
             int count = statement.executeUpdate();
             if (count > 0) {
-                var unit = units.get(matchUnitId);
-                userCount -= unit.userCount();
-                units.remove(matchUnitId);
+                super.removeMatchUnit(matchUnitId);
             }
-            return count;
+            return true;
         } catch (SQLException e) {
-            return 0;
+            return false;
         }
     }
 
     @Override
-    public MatchUnit getMatchUnit(long matchUnitId) {
-        return units.get(matchUnitId);
-    }
-
-    @Override
-    public MatchUnit[] matchUnits() {
-        return units.values().toArray(MatchUnit[]::new);
-    }
-
-    @Override
-    public int matchUnitCount() {
-        return units.size();
-    }
-
-    @Override
-    public int userCount() {
-        return userCount;
-    }
-
-    @Override
-    public int maxGameCount() {
-        return userCount() / criteria.userCountPerGame();
-    }
-
-    @Override
-    public MatchMakingCriteria getCriteria() {
-        return criteria;
-    }
-
-    @Override
-    public String poolName() {
-        return name;
+    public ArrayList<ArrayList<Integer>> getMutableExclusiveMatchUnits(MatchUnit[] units) {
+        return null;
     }
 
     /**
