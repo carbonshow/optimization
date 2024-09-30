@@ -24,7 +24,8 @@ class MatchMakingPoolTest {
     private final AtomicLong ID = new AtomicLong(0L);
     private final MatchMakingCriteria CRITERIA = new MatchMakingCriteria(2, 5, 10, 5, 2);
     private final Random RANDOM = new Random(12306);
-    private final SolverParameters SOLVER_PARAMETERS = new SolverParameters(1, 50, 30);
+    private final SolverParameters SOLVER_PARAMETERS_LIMIT = new SolverParameters(1, 50, 30);
+    private final SolverParameters SOLVER_PARAMETERS = new SolverParameters(-1, -1, 999999);
 
     @Tag("100Units")
     @Test
@@ -41,7 +42,7 @@ class MatchMakingPoolTest {
 
             long start = System.currentTimeMillis();
             var solver = new MatchMakingCPSolver(CRITERIA, "test", TimeVaryingConfig.defaultVal());
-            var solutions = solver.solve(pool, SOLVER_PARAMETERS, Instant.now().getEpochSecond());
+            var solutions = solver.solve(pool, SOLVER_PARAMETERS_LIMIT, Instant.now().getEpochSecond());
             System.out.println("\nElapsed time of solving: " + (System.currentTimeMillis() - start) + "ms");
             int i = 1;
             ArrayList<Long> unitIds = new ArrayList<>();
@@ -75,7 +76,7 @@ class MatchMakingPoolTest {
     }
 
     @Test
-    void findFeasibleTeams() {
+    void testDecomposeSolver() {
         Assertions.assertDoesNotThrow(() -> {
             var pool = new MatchMakingPoolGraph(CRITERIA, "test", TimeVaryingConfig.defaultVal());
             System.out.println("[Create Units]");

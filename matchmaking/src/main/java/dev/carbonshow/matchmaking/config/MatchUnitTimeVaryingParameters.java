@@ -98,8 +98,10 @@ public class MatchUnitTimeVaryingParameters implements TimeVaryingParameters {
         }
 
         enterTimestamp = NumberUtils.max(enterTimestamp, other.enterTimestamp);
-        lastUpdateTimestamp = NumberUtils.max(lastUpdateTimestamp, other.lastUpdateTimestamp);
+        lastUpdateTimestamp = NumberUtils.min(lastUpdateTimestamp, other.lastUpdateTimestamp);
         rank = NumberUtils.max(rank, other.rank);
         skill = NumberUtils.max(skill, other.skill);
+        matchedRankRange = Range.of(rank, rank);
+        matchedSkillRange = Range.of(skill, skill);
     }
 }

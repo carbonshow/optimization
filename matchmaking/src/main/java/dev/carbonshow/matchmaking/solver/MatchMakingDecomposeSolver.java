@@ -33,6 +33,7 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
     private final String name;
 
     private final FeasibleTeamFinder teamFinder;
+    private final FeasibleGameFinder gameFinder;
     private final TimeVaryingConfig timeVaryingConfig;
 
     public MatchMakingDecomposeSolver(MatchMakingCriteria criteria, String name, TimeVaryingConfig timeVaryingConfig) {
@@ -41,6 +42,7 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
         this.timeVaryingConfig = timeVaryingConfig;
         var operator = new DefaultMatchUnitOperator(this.criteria, timeVaryingConfig);
         teamFinder = new FeasibleTeamDPFinder(this.criteria, operator);
+        gameFinder = new FeasibleGameCPFinder(this.criteria, operator);
         Loader.loadNativeLibraries();
     }
 
@@ -67,8 +69,8 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
      *    </li>
      * </ul>
      *
-     * @param pool       匹配池，包含所有匹配单元的基础数据
-     * @param parameters 求解器配置参数
+     * @param pool             匹配池，包含所有匹配单元的基础数据
+     * @param parameters       求解器配置参数
      * @param currentTimestamp 当前时间戳，单位是秒
      * @return 符合要求的匹配结果
      */
@@ -79,10 +81,17 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
         for (MatchUnit unit : units) {
             unit.timeVaryingParameters().update(currentTimestamp, timeVaryingConfig);
         }
-        Arrays.sort(units, (o1, o2) -> o1.userCount() - o2.userCount());
+        Arrays.sort(units, Comparator.comparingInt(MatchUnit::userCount));
 
         // 先找到可行队伍解
+        var start = System.currentTimeMillis();
         var feasibleTeams = teamFinder.solve(units, currentTimestamp);
+        System.out.println("Find Feasible Teams: " + feasibleTeams.size() + ", Elapsed Time: " + (System.currentTimeMillis() - start));
+
+        // 基于可行队伍找到可行单局
+        start = System.currentTimeMillis();
+        var feasibleGames = gameFinder.solve(units, feasibleTeams, parameters, currentTimestamp);
+        System.out.println("Find Feasible Games: " + feasibleGames.size() + ", Elapsed Time: " + (System.currentTimeMillis() - start));
 
         // 从可行队伍解中，找到可行单局解
 //        System.out.println("[Find Feasible Games]");
