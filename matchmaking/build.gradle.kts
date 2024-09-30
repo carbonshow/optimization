@@ -18,6 +18,8 @@ dependencies {
   implementation("com.h2database:h2:2.3.232")
   implementation("org.orbisgis:h2gis:2.2.3")
   implementation("com.google.ortools:ortools-java:9.10.4067")
+  implementation("org.jdbi:jdbi3-core:3.45.4")
+  implementation("org.jdbi:jdbi3-sqlobject:3.45.4")
   implementation(project(":algorithm"))
 
 

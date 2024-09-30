@@ -40,6 +40,14 @@ public record MatchUnit(
         return longValue;
     }
 
+    public int rank() {
+        return timeVaryingParameters.getRank();
+    }
+
+    public double skill() {
+        return timeVaryingParameters.getSkill();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
