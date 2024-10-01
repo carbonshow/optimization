@@ -42,8 +42,8 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
         this.timeVaryingConfig = timeVaryingConfig;
         var operator = new DefaultMatchUnitOperator(this.criteria, timeVaryingConfig);
         teamFinder = new FeasibleTeamDPFinder(this.criteria, operator);
-        gameFinder = new FeasibleGameCPFinder(this.criteria, operator);
-        Loader.loadNativeLibraries();
+        gameFinder = new FeasibleGameBacktraceFinder(this.criteria, operator);
+        //gameFinder = new FeasibleGameCPFinder(this.criteria, operator);
     }
 
     /**
@@ -84,33 +84,14 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
         Arrays.sort(units, Comparator.comparingInt(MatchUnit::userCount));
 
         // 先找到可行队伍解
-        var start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         var feasibleTeams = teamFinder.solve(units, currentTimestamp);
-        System.out.println("Find Feasible Teams: " + feasibleTeams.size() + ", Elapsed Time: " + (System.currentTimeMillis() - start));
+        System.out.println("[Feasible Teams] " + feasibleTeams.size() + ", Time: " + (System.currentTimeMillis() - start));
 
         // 基于可行队伍找到可行单局
         start = System.currentTimeMillis();
         var feasibleGames = gameFinder.solve(units, feasibleTeams, parameters, currentTimestamp);
-        System.out.println("Find Feasible Games: " + feasibleGames.size() + ", Elapsed Time: " + (System.currentTimeMillis() - start));
-
-        // 从可行队伍解中，找到可行单局解
-//        System.out.println("[Find Feasible Games]");
-//        start = System.currentTimeMillis();
-//        var feasibleGames = getFeasibleGames(units, feasibleTeams);
-//        System.out.println("Feasible Game Count: " + feasibleGames.size() + ", Elapsed Time: " + (System.currentTimeMillis() - start));
-//        int gameIndex = 1;
-//        for (var game : feasibleGames) {
-//            System.out.println("Game: " + gameIndex);
-//            int teamIndex = 1;
-//            for (var team: game) {
-//                System.out.println("Team " + teamIndex);
-//                for (int i = team.nextSetBit(0); i != -1; i = team.nextSetBit(i + 1)) {
-//                    System.out.println(units[i]);
-//                }
-//                teamIndex += 1;
-//            }
-//            gameIndex += 1;
-//        }
+        System.out.println("[Feasible Games] " + feasibleGames.size() + ", Time: " + (System.currentTimeMillis() - start));
 
         return null;
     }
@@ -119,27 +100,5 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
     @Override
     public String getName() {
         return name;
-    }
-
-    private ArrayList<ArrayList<BitSet>> getFeasibleGames(MatchUnit[] units, ArrayList<BitSet> teams) {
-        ArrayList<ArrayList<BitSet>> games = new ArrayList<>();
-        backtrack(games, new ArrayList<>(), 1, teams);
-        return games;
-    }
-
-    private void backtrack(ArrayList<ArrayList<BitSet>> games, ArrayList<BitSet> tmpTeams, int start, ArrayList<BitSet> teams) {
-        if (tmpTeams.size() == criteria.teamCountPerGame()) {
-            games.add(new ArrayList<>(tmpTeams));
-            return;
-        }
-
-        for (int i = start; i < teams.size(); i++) {
-            var newTeam = teams.get(i);
-            if (tmpTeams.stream().noneMatch(team -> team.intersects(newTeam))) {
-                tmpTeams.add(teams.get(i));
-                backtrack(games, tmpTeams, i + 1, teams);
-                tmpTeams.removeLast();
-            }
-        }
     }
 }

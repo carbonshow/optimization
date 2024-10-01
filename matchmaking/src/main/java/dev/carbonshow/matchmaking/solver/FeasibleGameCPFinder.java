@@ -32,7 +32,7 @@ public class FeasibleGameCPFinder implements FeasibleGameFinder {
             assignment[i] = model.newBoolVar("t" + i);
         }
 
-        // 添加约束条件：每局有效单局数量符合要求，局内各 team 不存在共用匹配单元的情况
+        // 添加约束条件：每局有效单局数量符合要求
         LinearExprBuilder teamCounter = LinearExpr.newBuilder();
         for (int i = 0; i < teams.size(); i++) {
             teamCounter.add(assignment[i]);
@@ -58,7 +58,6 @@ public class FeasibleGameCPFinder implements FeasibleGameFinder {
         solver.getParameters().setEnumerateAllSolutions(true);
         GameSolutionCollector cb = new GameSolutionCollector(teams, assignment, parameters.maxGameCount(), operator);
         solver.solve(model, cb);
-
 
         return cb.getSolutions();
     }

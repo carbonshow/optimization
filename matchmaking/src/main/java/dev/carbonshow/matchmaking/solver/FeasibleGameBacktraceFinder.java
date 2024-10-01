@@ -4,7 +4,11 @@ import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.SolverParameters;
 import dev.carbonshow.matchmaking.pool.MatchUnit;
 
+import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
+import java.util.Stack;
+import java.util.stream.Collectors;
 
 /**
  * 使用回溯方法，寻找可用的单局求解器，用于将不同的队伍组织起来得到一个可用单局
@@ -28,6 +32,39 @@ public class FeasibleGameBacktraceFinder implements FeasibleGameFinder {
      * @return 返回可用单局，这些单局可以同时开启，即任何一个匹配单元最多只会出现在一个单局中
      */
     public List<FeasibleGame> solve(MatchUnit[] units, List<FeasibleTeam> teams, SolverParameters parameters, long currentTimestamp) {
-        return null;
+        ArrayList<FeasibleGame> games = new ArrayList<>();
+        Stack<GameFindState> states = new Stack<>();
+        states.push(new GameFindState(0, criteria.teamCountPerGame(), new BitSet(teams.size())));
+
+        while (!states.empty()) {
+            var state = states.pop();
+
+            if (state.exploredTeamCount >= teams.size()) {
+                continue;
+            }
+            var currentTeam = teams.get(state.exploredTeamCount);
+            if (state.foundTeams.stream().allMatch(foundTeam -> operator.isFitOneGame(currentTeam, teams.get(foundTeam)))) {
+                // 包含当前 Team
+                var newFoundTeams = (BitSet) state.foundTeams.clone();
+                newFoundTeams.set(state.exploredTeamCount);
+                int newLeftTeamCount = state.leftTeamCount - 1;
+                if (newLeftTeamCount <= 0) {
+                    var newFeasibleGame = new FeasibleGame(newFoundTeams.stream().mapToObj(teams::get).collect(Collectors.toCollection(ArrayList::new)));
+                    games.add(newFeasibleGame);
+                } else {
+                    var newState = new GameFindState(state.exploredTeamCount + 1, state.leftTeamCount - 1, newFoundTeams);
+                    states.push(newState);
+                }
+            }
+
+            // 不包含当前 team
+            var newState = new GameFindState(state.exploredTeamCount + 1, state.leftTeamCount, state.foundTeams);
+            states.push(newState);
+        }
+
+        return games;
+    }
+
+    private record GameFindState(int exploredTeamCount, int leftTeamCount, BitSet foundTeams) {
     }
 }
