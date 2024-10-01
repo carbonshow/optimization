@@ -14,26 +14,31 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class MatchMakingPoolTest {
+class MatchMakingTest {
 
     private final SolverParameters SOLVER_PARAMETERS_LIMIT = new SolverParameters(1, 50, 30);
     private final SolverParameters SOLVER_PARAMETERS = new SolverParameters(-1, -1, 999999);
 
     @Tag("100Units")
     @Test
-    void matchMakingWithTimeLimit() {
+    void testCPSolver() {
         Assertions.assertDoesNotThrow(() -> {
             var pool = new MatchMakingPoolGraph(TestUtilities.CRITERIA, "test", TimeVaryingConfig.defaultVal());
 
             System.out.println("[Create Units]");
-            for (int i = 0; i < 100; i++) {
-                var unit = TestUtilities.createMatchUnit();
+            for (var unit : TestUtilities.getFeasibleMatchUnit()) {
                 System.out.println(unit);
                 assertTrue(pool.addMatchUnit(unit));
             }
+//            for (int i = 0; i < 100; i++) {
+//                var unit = TestUtilities.createMatchUnit();
+//                System.out.println(unit);
+//                assertTrue(pool.addMatchUnit(unit));
+//            }
+
+            var solver = new MatchMakingCPSolver(TestUtilities.CRITERIA, "test", TimeVaryingConfig.defaultVal());
 
             long start = System.currentTimeMillis();
-            var solver = new MatchMakingCPSolver(TestUtilities.CRITERIA, "test", TimeVaryingConfig.defaultVal());
             var solutions = solver.solve(pool, SOLVER_PARAMETERS_LIMIT, Instant.now().getEpochSecond());
             System.out.println("\nElapsed time of solving: " + (System.currentTimeMillis() - start) + "ms");
             int i = 1;
@@ -71,11 +76,11 @@ class MatchMakingPoolTest {
     void testDecomposeSolver() {
         Assertions.assertDoesNotThrow(() -> {
             var pool = new MatchMakingPoolGraph(TestUtilities.CRITERIA, "test", TimeVaryingConfig.defaultVal());
-            System.out.println("[Create Units]");
-            for (int i = 0; i < 100; i++) {
+            final int unitCount = 200;
+            System.out.println("[Create Units] " + unitCount);
+            for (int i = 0; i < unitCount; i++) {
                 var unit = TestUtilities.createMatchUnit();
                 assertTrue(pool.addMatchUnit(unit));
-                System.out.println("Unit :" + unit);
             }
 
             long start = System.currentTimeMillis();

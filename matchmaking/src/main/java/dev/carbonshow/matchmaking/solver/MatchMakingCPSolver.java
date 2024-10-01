@@ -41,14 +41,14 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
     // 存储不同的划分方案，每个方案使用 Map 表示，key 表示 Unit人数，value 表示需要的该人数对应小队的数量
     private List<Map<Long, Long>> unitMemberCountPartitions;
 
+    private final MatchUnitOperator operator;
+
     public MatchMakingCPSolver(MatchMakingCriteria criteria, String name, TimeVaryingConfig timeVaryingConfig) {
         this.criteria = criteria;
         this.name = name;
         this.timeVaryingConfig = timeVaryingConfig;
+        operator = new DefaultMatchUnitOperator(criteria, timeVaryingConfig);
         Loader.loadNativeLibraries();
-
-        // 更新用户数量划分方案，后续不必重复计算
-        updateUserCountPartitions();
     }
 
     /**
@@ -74,8 +74,8 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
      *    </li>
      * </ul>
      *
-     * @param pool       匹配池，包含所有匹配单元的基础数据
-     * @param parameters 求解器配置参数
+     * @param pool             匹配池，包含所有匹配单元的基础数据
+     * @param parameters       求解器配置参数
      * @param currentTimestamp 当前时间戳，单位是秒
      * @return 符合要求的匹配结果
      */
@@ -85,11 +85,11 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
         CpModel model = new CpModel();
 
         final MatchUnit[] units = pool.matchUnits();
+
         final int matchUnitCount = pool.matchUnitCount();
         final int maxGameCount = pool.maxGameCount();
         final int teamCountPerGame = pool.getCriteria().teamCountPerGame();
         final int userCountPerTeam = pool.getCriteria().userCountPerTeam();
-        final int userCountPerGame = pool.getCriteria().userCountPerGame();
 
         // 决策变量：匹配单元分配到具体某个单局的某个队伍中
         Literal[][][] assignment = new Literal[matchUnitCount][maxGameCount][teamCountPerGame];
@@ -112,10 +112,8 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
                 for (int i = 0; i < matchUnitCount; i++) {
                     teamUserCount.addTerm(assignment[i][j][k], units[i].userCount());
                 }
-                //gameUserCount.add(teamUserCount);
                 model.addEquality(teamUserCount, userCountPerTeam);
             }
-            //model.addEquality(gameUserCount, userCountPerGame);
         }
 
         // 每个匹配单元最多只能被分配到一个单局的一个队伍中
@@ -128,12 +126,22 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
         }
 
         // 计算互斥关系
-//        var mutableExclusiveUnits = pool.getMutableExclusiveMatchUnits(units);
-//        for (int j = 0; j < maxGameCount; j++) {
-//            for (int k = 0; k < teamCountPerGame; k++) {
-//
-//            }
-//        }
+        for (int i = 0; i < matchUnitCount - 1; i++) {
+            for (int j = i + 1; j < matchUnitCount; j++) {
+                if (!operator.isFitOneTeam(units[i], units[j])) {
+                    // 互斥，那么最多出现一次
+                    System.out.println("Mutual Exclusive: " + units[i].matchUnitId() + ", " + units[j].matchUnitId());
+                    ArrayList<Literal> unitsLiteral = new ArrayList<>();
+                    for (int x = 0; x < maxGameCount; x++) {
+                        for (int y = 0; y < teamCountPerGame; y++) {
+                            unitsLiteral.add(assignment[i][x][y]);
+                            unitsLiteral.add(assignment[j][x][y]);
+                        }
+                    }
+                    model.addAtMostOne(unitsLiteral);
+                }
+            }
+        }
 
         // 求解
         CpSolver solver = new CpSolver();
@@ -221,18 +229,6 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
         //   - key 表示单局内队伍 index
         //   - value 是该队伍内各个 unit id 列表
         private final HashMap<Integer, HashMap<Integer, ArrayList<Long>>> solutions = new HashMap<>();
-    }
-
-    /**
-     * 对人数进行划分，只要 criteria 确定就是固定不变的，不必每次都重复计算。比如单局内一个队伍必须有 N 个人，每个 MatchUnit 的人数可能是
-     * [1, N]，作为加数。问题转化为将 N 用[1, N]的加数进行拆解，获得不同的拆解方案。这里使用默认的基于动态规划的求解器进行处理，效率很高。
-     */
-    private void updateUserCountPartitions() {
-        var countPartitionSolver = new DPIntegerPartition();
-        var partitions = countPartitionSolver.solveWithPartitions(LongStream.range(1, criteria.userCountPerTeam()).toArray(), criteria.userCountPerTeam());
-        unitMemberCountPartitions = partitions.stream().map(partition ->
-                        partition.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())))
-                .collect(Collectors.toCollection(ArrayList::new));
     }
 
     /**

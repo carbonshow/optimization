@@ -42,6 +42,7 @@ public class FeasibleGameBacktraceFinder implements FeasibleGameFinder {
             if (state.exploredTeamCount >= teams.size()) {
                 continue;
             }
+
             var currentTeam = teams.get(state.exploredTeamCount);
             if (state.foundTeams.stream().allMatch(foundTeam -> operator.isFitOneGame(currentTeam, teams.get(foundTeam)))) {
                 // 包含当前 Team

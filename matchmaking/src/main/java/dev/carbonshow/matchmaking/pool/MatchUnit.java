@@ -11,14 +11,12 @@ import java.util.Map;
  *
  * @param matchUnitId           匹配单元 ID
  * @param userIds               匹配单元内包含的用户 ID 列表
- * @param positions             本单元所有玩家擅长的位置集合，用 BitSet 表示，第 i 位如果为 1 表示玩家擅长第 i 个位置
  * @param relayLatency          当前匹配单元到不同帧同步服务器的延迟，key 是帧同步服务器分组 id，value 是 udp 通信延迟，单位是 ms
  * @param timeVaryingParameters 时变参数，比如接纳的等级差异等
  */
 public record MatchUnit(
         long matchUnitId,
         List<Long> userIds,
-        BitSet positions,
         double expectedWinProbability,
         Map<Integer, Integer> relayLatency,
         MatchUnitTimeVaryingParameters timeVaryingParameters
@@ -31,13 +29,7 @@ public record MatchUnit(
     }
 
     public long positionAsLong() {
-        long longValue = 0;
-        for (int bit = 0; bit < positions.length(); bit++) {
-            if (positions.get(bit)) {
-                longValue |= (1L << bit);
-            }
-        }
-        return longValue;
+        return timeVaryingParameters.getPositions().stream().reduce(0, (longValue, bit) -> longValue | (1 << bit));
     }
 
     public int rank() {

@@ -57,11 +57,11 @@ public class DefaultMatchUnitOperator implements MatchUnitOperator {
 
     @Override
     public FeasibleTeam mergeUnitsToTeam(MatchUnit[] units, BitSet unitMembers, long currentTimestamp) throws InvalidParameterException {
-        MatchUnitTimeVaryingParameters parameters = new MatchUnitTimeVaryingParameters(0L, 0, 0.0);
-        for (int i = unitMembers.nextSetBit(0); i >= 0; i = unitMembers.nextSetBit(i + 1)) {
-            var unit = units[i];
+        MatchUnitTimeVaryingParameters parameters = new MatchUnitTimeVaryingParameters(0L, 0, 0.0, new BitSet(matchMakingCriteria.maxPositions()));
+        unitMembers.stream().forEach(idx -> {
+            var unit = units[idx];
             parameters.merge(unit.timeVaryingParameters());
-        }
+        });
         parameters.update(currentTimestamp, timeVaryingConfig);
         return new FeasibleTeam(unitMembers, parameters);
     }

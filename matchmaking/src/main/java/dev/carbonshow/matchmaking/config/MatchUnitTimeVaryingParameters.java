@@ -3,6 +3,8 @@ package dev.carbonshow.matchmaking.config;
 import org.apache.commons.lang3.Range;
 import org.apache.commons.lang3.math.NumberUtils;
 
+import java.util.BitSet;
+
 /**
  * 记录匹配单元随时间变化的匹配参数
  * 这里的时间参数单位皆为秒
@@ -18,15 +20,19 @@ public class MatchUnitTimeVaryingParameters implements TimeVaryingParameters {
     // 基于整数衡量的当前匹配单元的经济实力
     private double skill;
 
+    // 当前匹配单元具备的位置信息，具有位置 i，则第 i 位置为 1
+    private BitSet positions;
+
     // 在等待一段时间后，一个匹配单元可以接纳的其他匹配单元的属性区间
     private Range<Integer> matchedRankRange;
     private Range<Double> matchedSkillRange;
 
-    public MatchUnitTimeVaryingParameters(long enterTimestamp, int rank, double skill) {
+    public MatchUnitTimeVaryingParameters(long enterTimestamp, int rank, double skill, BitSet positions) {
         this.enterTimestamp = enterTimestamp;
         this.lastUpdateTimestamp = 0;
         this.rank = rank;
         this.skill = skill;
+        this.positions = positions;
         matchedRankRange = Range.of(rank, rank);
         matchedSkillRange = Range.of(skill, skill);
     }
@@ -52,7 +58,7 @@ public class MatchUnitTimeVaryingParameters implements TimeVaryingParameters {
      * 等数值范围。
      *
      * @param currentTimestamp 当前时间戳，单位是秒
-     * @param config 时变配置参数
+     * @param config           时变配置参数
      */
     @Override
     public void update(long currentTimestamp, TimeVaryingConfig config) {
@@ -84,6 +90,10 @@ public class MatchUnitTimeVaryingParameters implements TimeVaryingParameters {
         return skill;
     }
 
+    public BitSet getPositions() {
+        return positions;
+    }
+
     public Range<Integer> getMatchedRankRange() {
         return matchedRankRange;
     }
@@ -101,6 +111,7 @@ public class MatchUnitTimeVaryingParameters implements TimeVaryingParameters {
         lastUpdateTimestamp = NumberUtils.min(lastUpdateTimestamp, other.lastUpdateTimestamp);
         rank = NumberUtils.max(rank, other.rank);
         skill = NumberUtils.max(skill, other.skill);
+        positions.or(other.positions);
         matchedRankRange = Range.of(rank, rank);
         matchedSkillRange = Range.of(skill, skill);
     }
