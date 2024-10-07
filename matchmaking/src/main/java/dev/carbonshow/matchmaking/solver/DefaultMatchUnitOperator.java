@@ -38,6 +38,17 @@ public class DefaultMatchUnitOperator implements MatchUnitOperator {
     }
 
     /**
+     * 判断给定的两个匹配单元是否可以进入同一单局的不同队伍内
+     * @param unit1 队伍 1，自身一定是可用的
+     * @param unit2 队伍 2，自身一定是可用的
+     * @return true 表示这些队伍可以进入同一单局；否则表示不能进入同一单局
+     */
+    @Override
+    public boolean isFitOneGame(MatchUnit unit1, MatchUnit unit2){
+        return checkTimeVaryingParameters(unit1.timeVaryingParameters(), unit2.timeVaryingParameters());
+    }
+
+    /**
      * 判断给定的几个 team 是否可以进入同一单局内
      *
      * @param team1 队伍 1，自身一定是可用的
@@ -78,7 +89,7 @@ public class DefaultMatchUnitOperator implements MatchUnitOperator {
      * @param param2 时变参数 2
      * @return true 说明两个参数有交集可用；负责不可用
      */
-    private boolean checkTimeVaryingParameters(MatchUnitTimeVaryingParameters param1, MatchUnitTimeVaryingParameters param2) {
+    public boolean checkTimeVaryingParameters(MatchUnitTimeVaryingParameters param1, MatchUnitTimeVaryingParameters param2) {
         return param1.getMatchedRankRange().contains(param2.getRank()) && param2.getMatchedRankRange().contains(param1.getRank())
                 &&
                 param1.getMatchedSkillRange().contains(param2.getSkill()) && param2.getMatchedSkillRange().contains(param1.getSkill());

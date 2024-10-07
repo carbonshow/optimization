@@ -2,7 +2,6 @@ package dev.carbonshow.matchmaking.solver;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
-import dev.carbonshow.algorithm.partition.DPIntegerPartition;
 import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.SolverParameters;
 import dev.carbonshow.matchmaking.config.TimeVaryingConfig;
@@ -11,9 +10,6 @@ import dev.carbonshow.matchmaking.MatchMakingResults;
 import dev.carbonshow.matchmaking.pool.MatchUnit;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 /**
  * 基于 Constraint-Programming Satisfy 的匹配优化器。求解过程分为多个阶段：
@@ -34,7 +30,6 @@ import java.util.stream.LongStream;
  * </ul>
  */
 public class MatchMakingCPSolver implements MatchMakingSolver {
-    private final MatchMakingCriteria criteria;
     private final String name;
     private final TimeVaryingConfig timeVaryingConfig;
 
@@ -44,7 +39,6 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
     private final MatchUnitOperator operator;
 
     public MatchMakingCPSolver(MatchMakingCriteria criteria, String name, TimeVaryingConfig timeVaryingConfig) {
-        this.criteria = criteria;
         this.name = name;
         this.timeVaryingConfig = timeVaryingConfig;
         operator = new DefaultMatchUnitOperator(criteria, timeVaryingConfig);
@@ -90,6 +84,7 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
         final int maxGameCount = pool.maxGameCount();
         final int teamCountPerGame = pool.getCriteria().teamCountPerGame();
         final int userCountPerTeam = pool.getCriteria().userCountPerTeam();
+        final int userCountPerGame = pool.getCriteria().userCountPerGame();
 
         // 决策变量：匹配单元分配到具体某个单局的某个队伍中
         Literal[][][] assignment = new Literal[matchUnitCount][maxGameCount][teamCountPerGame];
@@ -104,16 +99,26 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
             }
         }
 
+        // 用于标记有效对局变量，true 表示该对局有效
+        Literal[] games = new Literal[maxGameCount];
+        for (int j = 0; j < maxGameCount; j++) {
+            games[j] = model.newBoolVar("game" + j);
+        }
+
         // 如果一个单局有效，那么内部所有队伍人数必须符合要求
         for (int j = 0; j < maxGameCount; j++) {
+            // 对局如果有效，那么局内的玩家总数必须符合要求
             LinearExprBuilder gameUserCount = LinearExpr.newBuilder();
             for (int k = 0; k < teamCountPerGame; k++) {
                 LinearExprBuilder teamUserCount = LinearExpr.newBuilder();
+                teamUserCount.addTerm(games[j], -userCountPerTeam);
                 for (int i = 0; i < matchUnitCount; i++) {
                     teamUserCount.addTerm(assignment[i][j][k], units[i].userCount());
                 }
-                model.addEquality(teamUserCount, userCountPerTeam);
+                model.addEquality(teamUserCount, 0);
+                gameUserCount.add(teamUserCount);
             }
+            model.addEquality(gameUserCount, 0);
         }
 
         // 每个匹配单元最多只能被分配到一个单局的一个队伍中
@@ -128,34 +133,72 @@ public class MatchMakingCPSolver implements MatchMakingSolver {
         // 计算互斥关系
         for (int i = 0; i < matchUnitCount - 1; i++) {
             for (int j = i + 1; j < matchUnitCount; j++) {
-                if (!operator.isFitOneTeam(units[i], units[j])) {
-                    // 互斥，那么最多出现一次
-                    System.out.println("Mutual Exclusive: " + units[i].matchUnitId() + ", " + units[j].matchUnitId());
-                    ArrayList<Literal> unitsLiteral = new ArrayList<>();
+                if (!operator.isFitOneGame(units[i], units[j])) {
+                    // 不能出现在同一个单局中，没必要计算是否可以出现在同一个 team 中
                     for (int x = 0; x < maxGameCount; x++) {
+                        ArrayList<Literal> unitsLiteral = new ArrayList<>();
                         for (int y = 0; y < teamCountPerGame; y++) {
                             unitsLiteral.add(assignment[i][x][y]);
                             unitsLiteral.add(assignment[j][x][y]);
                         }
+                        model.addAtMostOne(unitsLiteral);
                     }
-                    model.addAtMostOne(unitsLiteral);
                 }
             }
         }
 
-        // 求解
-        CpSolver solver = new CpSolver();
-        solver.getParameters().setMaxTimeInSeconds(parameters.maxSolveTimeInSeconds());
-        solver.getParameters().setEnumerateAllSolutions(true);
-        MatchMakingSolutionWithLimit cb = new MatchMakingSolutionWithLimit(units, assignment, parameters.maxGameCount());
-        solver.solve(model, cb);
+        // 添加优化目标，对局数越多越好
+        model.maximize(LinearExpr.sum(games));
 
-        return cb.getSolutions();
+        // 求解，如果使用最优化，而非枚举所有可行解，那么可以设置并行方式。
+        CpSolver solver = new CpSolver();
+        solver.getParameters().setNumWorkers(16);
+        solver.getParameters().setMaxTimeInSeconds(parameters.maxSolveTimeInSeconds());
+        //solver.getParameters().setEnumerateAllSolutions(true);
+        //MatchMakingSolutionWithLimit cb = new MatchMakingSolutionWithLimit(units, assignment, parameters.maxGameCount());
+        //solver.solve(model, cb);
+
+        long startTime = System.currentTimeMillis();
+        CpSolverStatus status = solver.solve(model);
+        System.out.println("CP Solving Time: " + (System.currentTimeMillis() - startTime));
+        if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
+            return getOptimalResults(solver, games, assignment, units);
+        } else {
+            System.out.println("Not solution found!");
+            return null;
+        }
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    private MatchMakingResults getOptimalResults(CpSolver solver, Literal[] games, Literal[][][] assignment, MatchUnit[] units) {
+        final int userCount = assignment.length;
+        final int gameCount = assignment[0].length;
+        final int teamCount = assignment[0][0].length;
+
+        ArrayList<List<List<Long>>> matchMakingResults = new ArrayList<>();
+
+        for (int j = 0;  j < gameCount; j++) {
+            if (solver.booleanValue(games[j])) {
+                // 说明当前单局有效
+                ArrayList<List<Long>> validGames = new ArrayList<>();
+                for (int k = 0; k < teamCount; k++) {
+                    ArrayList<Long> validTeams = new ArrayList<>();
+                    for (int i = 0; i < userCount; i++) {
+                        if (solver.booleanValue(assignment[i][j][k])) {
+                            validTeams.add(units[i].matchUnitId());
+                        }
+                    }
+                    validGames.add(validTeams);
+                }
+                matchMakingResults.add(validGames);
+            }
+        }
+
+        return new MatchMakingResults(matchMakingResults);
     }
 
     /**

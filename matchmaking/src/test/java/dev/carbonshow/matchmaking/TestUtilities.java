@@ -3,44 +3,51 @@ package dev.carbonshow.matchmaking;
 import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.MatchUnitTimeVaryingParameters;
 import dev.carbonshow.matchmaking.pool.MatchUnit;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomGenerator;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 public class TestUtilities {
     public static final AtomicLong COUNTER = new AtomicLong(0L);
     public static final AtomicLong ID = new AtomicLong(0L);
     public static final MatchMakingCriteria CRITERIA = new MatchMakingCriteria(2, 5, 10, 5, 2);
-    public static final Random RANDOM = new Random(12306);
+    public static final double MAX_SKILL = 100.0;
+    public static final RandomGenerator RANDOM_GENERATOR = new JDKRandomGenerator(42);
+    public static final NormalDistribution RANK_DISTRIBUTION = new NormalDistribution(RANDOM_GENERATOR, CRITERIA.maxRank() / 2.0, CRITERIA.maxRank() / 6.0);
+    public static final NormalDistribution SKILL_DISTRIBUTION = new NormalDistribution(RANDOM_GENERATOR, MAX_SKILL / 2, MAX_SKILL / 6);
 
     public static MatchUnit createMatchUnit() {
-        final int timeWindow = 10 * 60;
+        final int timeWindow = 5 * 60;
         final long timeBase = Instant.now().getEpochSecond() - timeWindow;
-        final long enterTimestamp = timeBase + RANDOM.nextInt(timeWindow);
+        final long enterTimestamp = timeBase + RANDOM_GENERATOR.nextInt(timeWindow);
 
-        final int memberCount = RANDOM.nextInt(CRITERIA.userCountPerTeam()) + 1;
+        final int memberCount = RANDOM_GENERATOR.nextInt(CRITERIA.userCountPerTeam()) + 1;
         final var members = new ArrayList<>(LongStream.rangeClosed(1, memberCount).map(i -> ID.addAndGet(1L)).boxed().toList());
 
         BitSet positions = new BitSet(CRITERIA.maxPositions());
         for (int i = 0; i < CRITERIA.maxPositions(); i++) {
-            if (RANDOM.nextBoolean()) {
+            if (RANDOM_GENERATOR.nextBoolean()) {
                 positions.set(i);
             }
         }
 
         Map<Integer, Integer> relayLatencies = new HashMap<>();
         for (int i = 0; i < CRITERIA.maxRelayGroups(); i++) {
-            relayLatencies.put(i, RANDOM.nextInt(999));
+            relayLatencies.put(i, RANDOM_GENERATOR.nextInt(999));
         }
 
         MatchUnitTimeVaryingParameters timeVaryingParameters = new MatchUnitTimeVaryingParameters(enterTimestamp,
-                RANDOM.nextInt(CRITERIA.maxRank() / 4) + 1,
-                RANDOM.nextDouble(0.0, 1.0) + 3, positions);
+                genRank(), genSkill(), positions);
 
         return new MatchUnit(COUNTER.addAndGet(1L), members,
-                RANDOM.nextDouble(0.0, 1.0),
+                RANDOM_GENERATOR.nextDouble(),
                 relayLatencies,
                 timeVaryingParameters
         );
@@ -57,43 +64,39 @@ public class TestUtilities {
 
         Map<Integer, Integer> relayLatencies = new HashMap<>();
         for (int i = 0; i < CRITERIA.maxRelayGroups(); i++) {
-            relayLatencies.put(i, RANDOM.nextInt(999));
+            relayLatencies.put(i, RANDOM_GENERATOR.nextInt(999));
         }
 
-        var members1 = new ArrayList<Long>(List.of(1L));
-        var members2 = new ArrayList<Long>(List.of(2L, 3L));
-        var members3 = new ArrayList<Long>(List.of(4L, 5L, 6L));
-        var members4 = new ArrayList<Long>(List.of(7L, 8L, 9L, 10L));
-        var members5 = new ArrayList<Long>(List.of(11L, 12L, 13L, 14L, 15L));
-        return new ArrayList<MatchUnit>(List.of(
-                new MatchUnit(11L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(12L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(13L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(14L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(15L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(16L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(17L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(18L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(19L, members1, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(10L, members1, 0.5, relayLatencies, timeVaryingParameters),
+        var members1 = new ArrayList<>(List.of(1L));
+        var members2 = new ArrayList<>(List.of(2L, 3L));
+        var members3 = new ArrayList<>(List.of(4L, 5L, 6L));
+        var members4 = new ArrayList<>(List.of(7L, 8L, 9L, 10L));
+        var members5 = new ArrayList<>(List.of(11L, 12L, 13L, 14L, 15L));
 
-                new MatchUnit(21L, members2, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(22L, members2, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(23L, members2, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(24L, members2, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(25L, members2, 0.5, relayLatencies, timeVaryingParameters),
+        var unitsWithMember1 = IntStream.rangeClosed(1, 10).mapToObj(i -> new MatchUnit(10 + i - 1L, members1, 0.5, relayLatencies, timeVaryingParameters));
+        var unitsWithMember2 = IntStream.rangeClosed(1, 5).mapToObj(i -> new MatchUnit(20 + i - 1L, members2, 0.5, relayLatencies, timeVaryingParameters));
+        var unitsWithMember3 = IntStream.rangeClosed(1, 4).mapToObj(i -> new MatchUnit(30 + i - 1L, members3, 0.5, relayLatencies, timeVaryingParameters));
+        var unitsWithMember4 = IntStream.rangeClosed(1, 3).mapToObj(i -> new MatchUnit(40 + i - 1L, members4, 0.5, relayLatencies, timeVaryingParameters));
+        var unitsWithMember5 = IntStream.rangeClosed(1, 2).mapToObj(i -> new MatchUnit(50 + i - 1L, members5, 0.5, relayLatencies, timeVaryingParameters));
 
-                new MatchUnit(31L, members3, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(32L, members3, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(33L, members3, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(34L, members3, 0.5, relayLatencies, timeVaryingParameters),
+        return new ArrayList<>(Stream.of(unitsWithMember1, unitsWithMember2, unitsWithMember3, unitsWithMember4, unitsWithMember5).flatMap(i -> i).toList());
+    }
 
-                new MatchUnit(41L, members4, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(42L, members4, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(43L, members4, 0.5, relayLatencies, timeVaryingParameters),
+    static int genRank() {
+        var value = RANK_DISTRIBUTION.sample();
+        if (value < 0) {
+            return 1;
+        } else if (value > CRITERIA.maxRank()) {
+            return CRITERIA.maxRank();
+        } else {
+            return (int) value;
+        }
+    }
 
-                new MatchUnit(51L, members5, 0.5, relayLatencies, timeVaryingParameters),
-                new MatchUnit(52L, members5, 0.5, relayLatencies, timeVaryingParameters)
-                ));
+    static double genSkill() {
+        var value = SKILL_DISTRIBUTION.sample();
+        if (value < 0) {
+            return 1.0;
+        } else return Math.min(value, MAX_SKILL);
     }
 }

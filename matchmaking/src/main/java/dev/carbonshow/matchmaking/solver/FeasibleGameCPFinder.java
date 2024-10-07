@@ -56,7 +56,7 @@ public class FeasibleGameCPFinder implements FeasibleGameFinder {
         CpSolver solver = new CpSolver();
         solver.getParameters().setMaxTimeInSeconds(parameters.maxSolveTimeInSeconds());
         solver.getParameters().setEnumerateAllSolutions(true);
-        GameSolutionCollector cb = new GameSolutionCollector(teams, assignment, parameters.maxGameCount(), operator);
+        GameSolutionCollector cb = new GameSolutionCollector(teams, assignment, parameters.maxGameCount(), operator, currentTimestamp);
         solver.solve(model, cb);
 
         return cb.getSolutions();
@@ -68,11 +68,12 @@ public class FeasibleGameCPFinder implements FeasibleGameFinder {
      */
     private static class GameSolutionCollector extends CpSolverSolutionCallback {
 
-        public GameSolutionCollector(List<FeasibleTeam> teams, Literal[] assignment, int limit, MatchUnitOperator operator) {
+        public GameSolutionCollector(List<FeasibleTeam> teams, Literal[] assignment, int limit, MatchUnitOperator operator, long currentTimestamp) {
             this.teams = teams;
             this.assignment = assignment;
             solutionLimit = limit;
             this.operator = operator;
+            this.currentTimestamp = currentTimestamp;
         }
 
         @Override
@@ -92,7 +93,7 @@ public class FeasibleGameCPFinder implements FeasibleGameFinder {
                 teamIdx += 1;
             }
 
-            solutions.add(new FeasibleGame(teamsInGame));
+            solutions.add(new FeasibleGame(teamsInGame, currentTimestamp));
 
             // 如果已经满足搜索要求，那么终止
             if (solutionLimit > 0 && solutionLimit <= solutions.size()) {
@@ -117,6 +118,8 @@ public class FeasibleGameCPFinder implements FeasibleGameFinder {
 
         // 求解数量上线
         private final int solutionLimit;
+
+        private final long currentTimestamp;
 
         // 记录可用分配方案
         private final ArrayList<FeasibleGame> solutions = new ArrayList<>();

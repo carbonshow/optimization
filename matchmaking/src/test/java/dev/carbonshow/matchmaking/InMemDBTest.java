@@ -205,9 +205,9 @@ public class InMemDBTest {
 
             start = System.currentTimeMillis();
             IntStream.rangeClosed(1, QUERY_COUNT).forEach(i -> {
-                var count = TestUtilities.RANDOM.nextInt(5) + 1;
-                var rankDelta = TestUtilities.RANDOM.nextInt(3);
-                var skillDelta = TestUtilities.RANDOM.nextDouble(40);
+                var count = TestUtilities.RANDOM_GENERATOR.nextInt(5) + 1;
+                var rankDelta = TestUtilities.RANDOM_GENERATOR.nextInt(3);
+                var skillDelta = TestUtilities.RANDOM_GENERATOR.nextDouble() * 10;
                 var feasible = jdbcDao.getFeasibleUnits(count, 3, Range.of(3 - rankDelta, 3 + rankDelta), 50.0, Range.of(50.0 - skillDelta, 50.0 + skillDelta), 20);
 //                System.out.println("Query: " + count + ", " + rankDelta + ", " + skillDelta);
 //                feasible.forEach(id -> System.out.println(units.get(id - 1)));
@@ -222,13 +222,13 @@ public class InMemDBTest {
 
         var start = System.currentTimeMillis();
         IntStream.rangeClosed(1, QUERY_COUNT).forEach(i -> {
-            var count = TestUtilities.RANDOM.nextInt(5) + 1;
-            var rankDelta = TestUtilities.RANDOM.nextInt(3);
-            var skillDelta = TestUtilities.RANDOM.nextDouble(40);
+            var count = TestUtilities.RANDOM_GENERATOR.nextInt(5) + 1;
+            var rankDelta = TestUtilities.RANDOM_GENERATOR.nextInt(3);
+            var skillDelta = TestUtilities.RANDOM_GENERATOR.nextDouble() * 40;
             var feasible = units.stream().filter(unit -> {
                 return unit.memberCount <= count && Range.of(3 - rankDelta, 3 + rankDelta).contains(unit.rank)
                         && Range.of(50.0 - skillDelta, 50.0 + skillDelta).contains(unit.skill);
-            }).sorted(new Comparator<MatchUnitMinimal>() {
+            }).sorted(new Comparator<>() {
                 @Override
                 public int compare(MatchUnitMinimal o1, MatchUnitMinimal o2) {
                     var rankGap1 = abs(o1.rank - 3);
@@ -251,8 +251,8 @@ public class InMemDBTest {
         long start = System.currentTimeMillis();
         ArrayList<MatchUnitMinimal> units = new ArrayList<>();
         for (int i = 1; i < count; i++) {
-            units.add(new MatchUnitMinimal(i, TestUtilities.RANDOM.nextInt(5) + 1,
-                    TestUtilities.RANDOM.nextInt(10), TestUtilities.RANDOM.nextDouble(100.0)));
+            units.add(new MatchUnitMinimal(i, TestUtilities.RANDOM_GENERATOR.nextInt(5) + 1,
+                    TestUtilities.RANDOM_GENERATOR.nextInt(10), TestUtilities.RANDOM_GENERATOR.nextDouble() * 100));
         }
         System.out.println("create time(ms): " + (System.currentTimeMillis() - start));
         return units;

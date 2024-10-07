@@ -4,10 +4,7 @@ import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.SolverParameters;
 import dev.carbonshow.matchmaking.pool.MatchUnit;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -32,7 +29,7 @@ public class FeasibleGameBacktraceFinder implements FeasibleGameFinder {
      * @return 返回可用单局，这些单局可以同时开启，即任何一个匹配单元最多只会出现在一个单局中
      */
     public List<FeasibleGame> solve(MatchUnit[] units, List<FeasibleTeam> teams, SolverParameters parameters, long currentTimestamp) {
-        ArrayList<FeasibleGame> games = new ArrayList<>();
+        PriorityQueue<FeasibleGame> games = new PriorityQueue<>(parameters.maxGameCount(), Comparator.comparingDouble(FeasibleGame::getScore));
         Stack<GameFindState> states = new Stack<>();
         states.push(new GameFindState(0, criteria.teamCountPerGame(), new BitSet(teams.size())));
 
@@ -50,8 +47,8 @@ public class FeasibleGameBacktraceFinder implements FeasibleGameFinder {
                 newFoundTeams.set(state.exploredTeamCount);
                 int newLeftTeamCount = state.leftTeamCount - 1;
                 if (newLeftTeamCount <= 0) {
-                    var newFeasibleGame = new FeasibleGame(newFoundTeams.stream().mapToObj(teams::get).collect(Collectors.toCollection(ArrayList::new)));
-                    games.add(newFeasibleGame);
+                    var newFeasibleGame = new FeasibleGame(newFoundTeams.stream().mapToObj(teams::get).collect(Collectors.toCollection(ArrayList::new)), currentTimestamp);
+                    keepTopNGames(games, newFeasibleGame, parameters.maxGameCount());
                 } else {
                     var newState = new GameFindState(state.exploredTeamCount + 1, state.leftTeamCount - 1, newFoundTeams);
                     states.push(newState);
@@ -63,9 +60,20 @@ public class FeasibleGameBacktraceFinder implements FeasibleGameFinder {
             states.push(newState);
         }
 
-        return games;
+        return games.stream().toList();
     }
 
     private record GameFindState(int exploredTeamCount, int leftTeamCount, BitSet foundTeams) {
+    }
+
+    private void keepTopNGames(PriorityQueue<FeasibleGame> games, FeasibleGame newGame, int N) {
+        if (games.size() < N) {
+            games.offer(newGame);
+        } else {
+            if (newGame.getScore() > games.peek().getScore()) {
+                games.poll();
+                games.offer(newGame);
+            }
+        }
     }
 }

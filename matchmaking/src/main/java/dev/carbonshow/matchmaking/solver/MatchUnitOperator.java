@@ -18,6 +18,14 @@ public interface MatchUnitOperator {
     boolean isFitOneTeam(MatchUnit unit1, MatchUnit unit2);
 
     /**
+     * 判断给定的两个匹配单元是否可以进入同一单局的不同队伍内
+     * @param unit1 队伍 1，自身一定是可用的
+     * @param unit2 队伍 2，自身一定是可用的
+     * @return true 表示这些队伍可以进入同一单局；否则表示不能进入同一单局
+     */
+    boolean isFitOneGame(MatchUnit unit1, MatchUnit unit2);
+
+    /**
      * 判断给定的几个 team 是否可以进入同一单局内
      * @param team1 队伍 1，自身一定是可用的
      * @param team2 队伍 2，自身一定是可用的

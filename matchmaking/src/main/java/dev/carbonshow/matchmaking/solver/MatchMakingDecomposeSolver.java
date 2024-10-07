@@ -1,6 +1,9 @@
 package dev.carbonshow.matchmaking.solver;
 
 import com.google.ortools.Loader;
+import com.google.ortools.linearsolver.MPConstraint;
+import com.google.ortools.linearsolver.MPObjective;
+import com.google.ortools.linearsolver.MPSolver;
 import dev.carbonshow.matchmaking.MatchMakingResults;
 import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.SolverParameters;
@@ -29,7 +32,6 @@ import java.util.*;
  * </ul>
  */
 public class MatchMakingDecomposeSolver implements MatchMakingSolver {
-    private final MatchMakingCriteria criteria;
     private final String name;
 
     private final FeasibleTeamFinder teamFinder;
@@ -37,13 +39,14 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
     private final TimeVaryingConfig timeVaryingConfig;
 
     public MatchMakingDecomposeSolver(MatchMakingCriteria criteria, String name, TimeVaryingConfig timeVaryingConfig) {
-        this.criteria = criteria;
         this.name = name;
         this.timeVaryingConfig = timeVaryingConfig;
-        var operator = new DefaultMatchUnitOperator(this.criteria, timeVaryingConfig);
-        teamFinder = new FeasibleTeamDPFinder(this.criteria, operator);
-        gameFinder = new FeasibleGameBacktraceFinder(this.criteria, operator);
+        var operator = new DefaultMatchUnitOperator(criteria, timeVaryingConfig);
+        teamFinder = new FeasibleTeamDPFinder(criteria, operator);
+        gameFinder = new FeasibleGameBacktraceFinder(criteria, operator);
         //gameFinder = new FeasibleGameCPFinder(this.criteria, operator);
+
+        Loader.loadNativeLibraries();
     }
 
     /**
@@ -93,12 +96,67 @@ public class MatchMakingDecomposeSolver implements MatchMakingSolver {
         var feasibleGames = gameFinder.solve(units, feasibleTeams, parameters, currentTimestamp);
         System.out.println("[Feasible Games] " + feasibleGames.size() + ", Time: " + (System.currentTimeMillis() - start));
 
-        return null;
-    }
+        // 基于可行单局寻找最终解
+        start = System.currentTimeMillis();
+        var result = getFinalResult(units, feasibleGames);
+        if (result != null) {
+            System.out.println("[Results] " + result.results().size() + ", Time: " + (System.currentTimeMillis() - start));
+        } else {
+            System.out.println("No solution");
+        }
 
+        return result;
+    }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    private MatchMakingResults getFinalResult(MatchUnit[] units, List<FeasibleGame> games) {
+        MPSolver solver = MPSolver.createSolver("SCIP");
+        if (solver == null) {
+            System.out.println("Could not create solver SCIP");
+            return null;
+        }
+
+        // 确定哪个方案最终被选择
+        final var assigns = solver.makeBoolVarArray(games.size(), "valid");
+
+        // 约束条件是每个匹配单元最多只出现一次
+        MPConstraint[] constraints = new MPConstraint[units.length];
+        for (int i = 0; i < units.length; i++) {
+            constraints[i] = solver.makeConstraint(0, 1);
+        }
+        int j = 0;
+        for (var game : games) {
+            final var assign = assigns[j];
+            game.getMembers().stream().forEach(idx -> constraints[idx].setCoefficient(assign, 1));
+            j++;
+        }
+
+        // 优化目标是可用单局越多越好
+        MPObjective objective = solver.objective();
+        for (var assign: assigns) {
+            objective.setCoefficient(assign, 1);
+        }
+        objective.setMaximization();
+
+        // 求解
+        final MPSolver.ResultStatus status = solver.solve();
+        List<List<List<Long>>> results = new ArrayList<>();
+        if (status == MPSolver.ResultStatus.OPTIMAL) {
+            j = 0;
+            for (var game: games) {
+                if (assigns[j].solutionValue() > 0.0) {
+                    results.add(game.toRaw(units));
+                }
+                j++;
+            }
+            return new MatchMakingResults(results);
+        } else {
+            System.err.println("The problem does not have an optimal solution!");
+            return null;
+        }
     }
 }

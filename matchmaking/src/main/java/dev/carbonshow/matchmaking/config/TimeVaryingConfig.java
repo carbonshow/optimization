@@ -10,6 +10,6 @@ package dev.carbonshow.matchmaking.config;
 public record TimeVaryingConfig(int rankWindow, int deltaRank, int skillWindow, double deltaSkillRatio) {
 
     public static TimeVaryingConfig defaultVal() {
-        return new TimeVaryingConfig(60, 1, 60, 0.2);
+        return new TimeVaryingConfig(60, 1, 60, 0.05);
     }
 }
