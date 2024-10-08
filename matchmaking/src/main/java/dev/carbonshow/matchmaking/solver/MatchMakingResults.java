@@ -1,4 +1,4 @@
-package dev.carbonshow.matchmaking;
+package dev.carbonshow.matchmaking.solver;
 
 
 import java.util.List;

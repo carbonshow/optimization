@@ -4,7 +4,6 @@ import com.google.ortools.Loader;
 import com.google.ortools.linearsolver.MPConstraint;
 import com.google.ortools.linearsolver.MPObjective;
 import com.google.ortools.linearsolver.MPSolver;
-import dev.carbonshow.matchmaking.MatchMakingResults;
 import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.SolverParameters;
 import dev.carbonshow.matchmaking.config.TimeVaryingConfig;

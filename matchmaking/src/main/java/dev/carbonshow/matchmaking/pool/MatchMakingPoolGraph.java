@@ -8,15 +8,11 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.builder.GraphTypeBuilder;
 
-import java.util.ArrayList;
-
 public class MatchMakingPoolGraph extends MatchMakingPoolBasic {
     // 建立匹配单元的图结构，如果两个单元可以匹配则存在边
     // 显然，两个单元是否可以进入同一场单局，和时间因素密切相关，因此注意按时更新
     private final Graph<MatchUnit, DefaultEdge> graph;
 
-    // 用于 MatchUnit 的计算
-    private final MatchUnitOperator matchUnitOperator;
     TimeVaryingConfig timeVaryingConfig;
 
     /**
@@ -41,7 +37,7 @@ public class MatchMakingPoolGraph extends MatchMakingPoolBasic {
         super(criteria, name);
         graph = GraphTypeBuilder.<MatchUnit, DefaultEdge>undirected().allowingMultipleEdges(false).allowingSelfLoops(false)
                 .edgeClass(DefaultEdge.class).weighted(true).buildGraph();
-        matchUnitOperator = operator;
+        // 用于 MatchUnit 的计算
     }
 
     /**
@@ -80,29 +76,6 @@ public class MatchMakingPoolGraph extends MatchMakingPoolBasic {
         for (var unit : units.values()) {
             unit.timeVaryingParameters().update(currentTimestamp, this.timeVaryingConfig);
         }
-    }
-
-    /**
-     * 在获取 units 列表时，需要更新时变参数
-     */
-    @Override
-    public MatchUnit[] matchUnits() {
-        return super.matchUnits();
-    }
-
-    @Override
-    public ArrayList<ArrayList<Integer>> getMutableExclusiveMatchUnits(MatchUnit[] units) {
-        ArrayList<ArrayList<Integer>> mutableExclusiveMatchUnits = new ArrayList<>();
-        for (int i = 0; i < units.length; i++) {
-            ArrayList<Integer> exclusiveUnits = new ArrayList<>();
-            for (int j = i + 1; j < units.length; j++) {
-                if (!matchUnitOperator.isFitOneTeam(units[i], units[j])) {
-                    exclusiveUnits.add(j);
-                }
-            }
-            mutableExclusiveMatchUnits.add(exclusiveUnits);
-        }
-        return mutableExclusiveMatchUnits;
     }
 
     public Graph<MatchUnit, DefaultEdge> getGraph() {

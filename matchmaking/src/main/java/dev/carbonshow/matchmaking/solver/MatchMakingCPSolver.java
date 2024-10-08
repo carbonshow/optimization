@@ -6,7 +6,6 @@ import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 import dev.carbonshow.matchmaking.config.SolverParameters;
 import dev.carbonshow.matchmaking.config.TimeVaryingConfig;
 import dev.carbonshow.matchmaking.pool.MatchMakingPool;
-import dev.carbonshow.matchmaking.MatchMakingResults;
 import dev.carbonshow.matchmaking.pool.MatchUnit;
 
 import java.util.*;

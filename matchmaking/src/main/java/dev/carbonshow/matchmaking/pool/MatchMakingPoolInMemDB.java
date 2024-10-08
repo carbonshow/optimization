@@ -3,7 +3,6 @@ package dev.carbonshow.matchmaking.pool;
 import dev.carbonshow.matchmaking.config.MatchMakingCriteria;
 
 import java.sql.*;
-import java.util.ArrayList;
 
 /**
  * 匹配池中多个匹配单元，存在频繁的更新、删除，以及复杂的过滤、排序。
@@ -76,11 +75,6 @@ public class MatchMakingPoolInMemDB extends MatchMakingPoolBasic {
         } catch (SQLException e) {
             return false;
         }
-    }
-
-    @Override
-    public ArrayList<ArrayList<Integer>> getMutableExclusiveMatchUnits(MatchUnit[] units) {
-        return null;
     }
 
     /**
